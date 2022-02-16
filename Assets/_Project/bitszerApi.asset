@@ -17,19 +17,19 @@ MonoBehaviour:
   - name: getUserAuctions
     type: 0
     query: "query getUserAuctions{\n    getUserAuctions(  userId :\"70de85fa-f5aa-4c4e-b6be-415644096355\",
-      limit :1, nextToken :\"\" ){\n        nextToken\n        auctions{\n           
-      bid\n            buyout\n            createdAt\n            expiration\n           
-      highBidderProfile{\n                backgroundImageUrl\n                buyAmount\n               
-      buyCount\n                createdAt\n                id\n                imageUrl\n               
-      name\n                postedAuctionsCount\n                screenName\n               
-      soldAmount\n                soldCount\n                title\n        }\n           
-      sellerProfile{\n                buyCount\n                createdAt\n               
-      postedAuctionsCount\n                title\n                soldCount\n               
-      soldAmount\n                screenName\n                name\n               
-      backgroundImageUrl\n                buyAmount\n                id\n               
-      imageUrl\n        }\n            gameItem{\n                description\n               
-      gameName\n                imageUrl\n                itemId\n               
-      itemName\n        }\n            id\n            quantity\n        }\n    }\n}"
+      limit :10 ){\n        nextToken\n        auctions{\n            bid\n           
+      buyout\n            createdAt\n            expiration\n            highBidderProfile{\n               
+      backgroundImageUrl\n                buyAmount\n                buyCount\n               
+      createdAt\n                id\n                imageUrl\n                name\n               
+      postedAuctionsCount\n                screenName\n                soldAmount\n               
+      soldCount\n                title\n        }\n            sellerProfile{\n               
+      buyCount\n                createdAt\n                postedAuctionsCount\n               
+      title\n                soldCount\n                soldAmount\n               
+      screenName\n                name\n                backgroundImageUrl\n               
+      buyAmount\n                id\n                imageUrl\n        }\n           
+      gameItem{\n                description\n                gameName\n               
+      imageUrl\n                itemId\n                itemName\n        }\n           
+      id\n            quantity\n        }\n    }\n}"
     queryString: getUserAuctions
     returnType: AuctionPage
     queryOptions:
@@ -2396,19 +2396,20 @@ MonoBehaviour:
     isComplete: 1
   - name: getAuctions
     type: 0
-    query: "query getAuctions{\n    getAuctions{\n        nextToken\n        auctions{\n           
-      bid\n            buyout\n            createdAt\n            expiration\n           
-      id\n            quantity\n            gameItem{\n                description\n               
-      gameName\n                imageUrl\n                itemId\n               
-      itemName\n        }\n            highBidderProfile{\n                backgroundImageUrl\n               
-      buyAmount\n                buyCount\n                createdAt\n               
-      id\n                imageUrl\n                name\n                postedAuctionsCount\n               
-      screenName\n                soldAmount\n                soldCount\n               
-      title\n        }\n            sellerProfile{\n                backgroundImageUrl\n               
-      buyAmount\n                buyCount\n                createdAt\n               
-      id\n                imageUrl\n                name\n                postedAuctionsCount\n               
-      screenName\n                soldAmount\n                soldCount\n               
-      title\n            }\n        }\n    }\n}"
+    query: "query getAuctions{\n    getAuctions(  itemName :\"\", limit :10 ){\n       
+      nextToken\n        auctions{\n            bid\n            buyout\n           
+      createdAt\n            expiration\n            id\n            quantity\n           
+      gameItem{\n                description\n                gameName\n               
+      imageUrl\n                itemId\n                itemName\n        }\n           
+      highBidderProfile{\n                backgroundImageUrl\n                buyAmount\n               
+      buyCount\n                createdAt\n                id\n                imageUrl\n               
+      name\n                postedAuctionsCount\n                screenName\n               
+      soldAmount\n                soldCount\n                title\n        }\n           
+      sellerProfile{\n                backgroundImageUrl\n                buyAmount\n               
+      buyCount\n                createdAt\n                id\n                imageUrl\n               
+      name\n                postedAuctionsCount\n                screenName\n               
+      soldAmount\n                soldCount\n                title\n            }\n       
+      }\n    }\n}"
     queryString: getAuctions
     returnType: AuctionPage
     queryOptions:
@@ -3604,10 +3605,10 @@ MonoBehaviour:
     isComplete: 1
   - name: getInventory
     type: 0
-    query: "query getInventory{\n    getInventory{\n        nextToken\n        inventory{\n           
-      ItemCount\n            username\n            gameItem{\n                description\n               
-      imageUrl\n                itemName\n                itemId\n               
-      gameName\n            }\n        }\n    }\n}"
+    query: "query getInventory{\n    getInventory(  limit :10 ){\n        nextToken\n       
+      inventory{\n            ItemCount\n            username\n            gameItem{\n               
+      description\n                imageUrl\n                itemName\n               
+      itemId\n                gameName\n            }\n        }\n    }\n}"
     queryString: getInventory
     returnType: InventoryPage
     queryOptions:
@@ -3777,10 +3778,11 @@ MonoBehaviour:
     isComplete: 1
   - name: getMyInventorybyGame
     type: 0
-    query: "query getMyInventorybyGame{\n    getMyInventorybyGame{\n        nextToken\n       
-      inventory{\n            username\n            ItemCount\n            gameItem{\n               
-      itemId\n                gameName\n                itemName\n               
-      imageUrl\n                description\n            }\n        }\n    }\n}"
+    query: "query getMyInventorybyGame{\n    getMyInventorybyGame(  limit :10, gameId
+      :\"\" ){\n        nextToken\n        inventory{\n            username\n           
+      ItemCount\n            gameItem{\n                itemId\n                gameName\n               
+      itemName\n                imageUrl\n                description\n           
+      }\n        }\n    }\n}"
     queryString: getMyInventorybyGame
     returnType: InventoryPage
     queryOptions:
@@ -3950,20 +3952,21 @@ MonoBehaviour:
     isComplete: 1
   - name: getAuctionsbyGame
     type: 0
-    query: "query getAuctionsbyGame{\n    getAuctionsbyGame{\n        nextToken\n       
-      auctions{\n            id\n            createdAt\n            bid\n           
-      buyout\n            expiration\n            quantity\n            gameItem{\n               
-      itemId\n                gameName\n                itemName\n               
-      imageUrl\n                description\n        }\n            highBidderProfile{\n               
+    query: "query getAuctionsbyGame{\n    getAuctionsbyGame(  gameId :\"\", limit
+      :10 ){\n        nextToken\n        auctions{\n            id\n            createdAt\n           
+      bid\n            buyout\n            expiration\n            quantity\n           
+      gameItem{\n                itemId\n                gameName\n               
+      itemName\n                imageUrl\n                description\n        }\n           
+      highBidderProfile{\n                id\n                name\n               
+      screenName\n                imageUrl\n                backgroundImageUrl\n               
+      createdAt\n                postedAuctionsCount\n                buyCount\n               
+      soldCount\n                buyAmount\n                soldAmount\n               
+      title\n                role\n        }\n            sellerProfile{\n               
       id\n                name\n                screenName\n                imageUrl\n               
       backgroundImageUrl\n                createdAt\n                postedAuctionsCount\n               
       buyCount\n                soldCount\n                buyAmount\n               
-      soldAmount\n                title\n                role\n        }\n           
-      sellerProfile{\n                id\n                name\n                screenName\n               
-      imageUrl\n                backgroundImageUrl\n                createdAt\n               
-      postedAuctionsCount\n                buyCount\n                soldCount\n               
-      buyAmount\n                soldAmount\n                title\n               
-      role\n            }\n        }\n    }\n}"
+      soldAmount\n                title\n                role\n            }\n       
+      }\n    }\n}"
     queryString: getAuctionsbyGame
     returnType: AuctionPage
     queryOptions:
@@ -5229,9 +5232,10 @@ MonoBehaviour:
     isComplete: 1
   - name: getGameItemsbyGame
     type: 0
-    query: "query getGameItemsbyGame{\n    getGameItemsbyGame{\n        nextToken\n       
-      gameItems{\n            itemId\n            gameName\n            itemName\n           
-      imageUrl\n            description\n        }\n    }\n}"
+    query: "query getGameItemsbyGame{\n    getGameItemsbyGame(  gameId :\"\", limit
+      :10 ){\n        nextToken\n        gameItems{\n            itemId\n           
+      gameName\n            itemName\n            imageUrl\n            description\n       
+      }\n    }\n}"
     queryString: getGameItemsbyGame
     returnType: GameItemsPage
     queryOptions:

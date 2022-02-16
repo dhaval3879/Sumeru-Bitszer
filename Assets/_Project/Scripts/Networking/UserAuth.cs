@@ -39,14 +39,14 @@ public class UserAuth : MonoBehaviour
 
     public void GetData()
     {
-        GetUserAuctions("70de85fa-f5aa-4c4e-b6be-415644096355", 1, "");
+        GetUserAuctions("70de85fa-f5aa-4c4e-b6be-415644096355", 10);
         GetMyProfile();
         GetProfile("Hannah");
-        GetAuctions("Hannah", 1, "");
-        GetInventory(1, "");
-        GetMyInventoryByGame(1, "", "");
-        GetAuctionsByGame("", 1, "");
-        GetGameItemsByGame("", 1, "");
+        GetAuctions("", 10);
+        GetInventory(10);
+        GetMyInventoryByGame(10, "");
+        GetAuctionsByGame("", 10);
+        GetGameItemsByGame("", 10);
     }
 
     private async Task LoginUser()
@@ -111,11 +111,11 @@ public class UserAuth : MonoBehaviour
         }
     }
 
-    private async void GetUserAuctions(string userId, int limit, string nextToken)
+    private async void GetUserAuctions(string userId, int limit)
     {
         GraphApi.Query getUserActionsQuery = graphApi.GetQueryByName("getUserAuctions", GraphApi.Query.Type.Query);
 
-        getUserActionsQuery.SetArgs(new { userId, limit, nextToken, });
+        getUserActionsQuery.SetArgs(new { userId, limit, });
 
         await graphApi.Post(getUserActionsQuery);
     }
@@ -134,47 +134,47 @@ public class UserAuth : MonoBehaviour
         await graphApi.Post(getProfileQuery);
     }
 
-    private async void GetAuctions(string itemName, int limit, string nextToken)
+    private async void GetAuctions(string itemName, int limit)
     {
         GraphApi.Query getAuctionsQuery = graphApi.GetQueryByName("getAuctions", GraphApi.Query.Type.Query);
 
-        getAuctionsQuery.SetArgs(new { itemName, limit, nextToken, });
+        getAuctionsQuery.SetArgs(new { itemName, limit, });
 
         await graphApi.Post(getAuctionsQuery);
     }
 
-    private async void GetInventory(int limit, string nextToken)
+    private async void GetInventory(int limit)
     {
         GraphApi.Query getInventoryQuery = graphApi.GetQueryByName("getInventory", GraphApi.Query.Type.Query);
 
-        getInventoryQuery.SetArgs(new { limit, nextToken, });
+        getInventoryQuery.SetArgs(new { limit, });
 
         await graphApi.Post(getInventoryQuery);
     }
 
-    private async void GetMyInventoryByGame(int limit, string nextToken, string gameId)
+    private async void GetMyInventoryByGame(int limit, string gameId)
     {
         GraphApi.Query getMyInventorybyGameQuery = graphApi.GetQueryByName("getMyInventorybyGame", GraphApi.Query.Type.Query);
 
-        getMyInventorybyGameQuery.SetArgs(new { limit, nextToken, gameId, });
+        getMyInventorybyGameQuery.SetArgs(new { limit, gameId, });
 
         await graphApi.Post(getMyInventorybyGameQuery);
     }
 
-    private async void GetAuctionsByGame(string gameId, int limit, string nextToken)
+    private async void GetAuctionsByGame(string gameId, int limit)
     {
         GraphApi.Query getAuctionsbyGameQuery = graphApi.GetQueryByName("getAuctionsbyGame", GraphApi.Query.Type.Query);
 
-        getAuctionsbyGameQuery.SetArgs(new { gameId, limit, nextToken, });
+        getAuctionsbyGameQuery.SetArgs(new { gameId, limit, });
 
         await graphApi.Post(getAuctionsbyGameQuery);
     }
 
-    private async void GetGameItemsByGame(string gameId, int limit, string nextToken)
+    private async void GetGameItemsByGame(string gameId, int limit)
     {
         GraphApi.Query getGameItemsbyGameQuery = graphApi.GetQueryByName("getGameItemsbyGame", GraphApi.Query.Type.Query);
 
-        getGameItemsbyGameQuery.SetArgs(new { gameId, limit, nextToken, });
+        getGameItemsbyGameQuery.SetArgs(new { gameId, limit, });
 
         await graphApi.Post(getGameItemsbyGameQuery);
     }

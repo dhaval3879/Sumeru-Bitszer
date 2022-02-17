@@ -14,6 +14,9 @@ public class UserAuth : MonoBehaviour
     [Header("Scriptable Object")]
     public GraphApi graphApi;
 
+    [Header("UIManager")]
+    public UIManager uiManager;
+
     [Header("Login UI")]
     public TMP_InputField emailLoginInputField;
     public TMP_InputField passwordLoginInputField;
@@ -27,6 +30,8 @@ public class UserAuth : MonoBehaviour
     private string poolId = "us-west-2_wItToCbsB";
     private string clientId = "553o5tjm99c10p22m6aopmtaat";
 
+    public static Action OnAccessTokenReceived;
+
     public void SignUpUser()
     {
         RegisterUser();
@@ -35,6 +40,7 @@ public class UserAuth : MonoBehaviour
     public void SignInUser()
     {
         LoginUser();
+        OnAccessTokenReceived?.Invoke();
     }
 
     public void GetData()

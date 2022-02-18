@@ -22,8 +22,6 @@ namespace GraphQlClient.Core
 			UnityWebRequest request = UnityWebRequest.Post(url, UnityWebRequest.kHttpVerbPOST);
 			request.uploadHandler = new UploadHandlerRaw(postData);
 			request.SetRequestHeader("Content-Type", "application/json");
-			//request.SetRequestHeader("aws_appsync_region", "us-west-2");
-			//request.SetRequestHeader("aws_appsync_authenticationType", "AMAZON_COGNITO_USER_POOLS");
 			if (!String.IsNullOrEmpty(authToken))
 				request.SetRequestHeader("Authorization", authToken);
 
@@ -44,6 +42,9 @@ namespace GraphQlClient.Core
 
 			OnRequestEnded requestSucceeded = new OnRequestEnded(request.downloadHandler.text);
 			requestSucceeded.FireEvent();
+
+			DataProvider.Instance.loadingPanel.SetActive(false);
+
 			return request;
 		}
 

@@ -10,6 +10,25 @@ public class GetUserAuctionsData
     public GetUserAuctions getUserAuctions { get; set; }
 }
 
+public class GetUserAuctions
+{
+    public string nextToken { get; set; }
+    public List<Auction> auctions { get; set; }
+}
+
+public class Auction
+{
+    public double bid { get; set; }
+    public double buyout { get; set; }
+    public string createdAt { get; set; }
+    public string expiration { get; set; }
+    public HighBidderProfile highBidderProfile { get; set; }
+    public SellerProfile sellerProfile { get; set; }
+    public GameItem gameItem { get; set; }
+    public string id { get; set; }
+    public int quantity { get; set; }
+}
+
 public class HighBidderProfile
 {
     public int buyCount { get; set; }
@@ -40,32 +59,4 @@ public class SellerProfile
     public double buyAmount { get; set; }
     public string id { get; set; }
     public string imageUrl { get; set; }
-}
-
-public class GameItem
-{
-    public string description { get; set; }
-    public string gameName { get; set; }
-    public string imageUrl { get; set; }
-    public string itemId { get; set; }
-    public string itemName { get; set; }
-}
-
-public class Auction
-{
-    public double bid { get; set; }
-    public double buyout { get; set; }
-    public string createdAt { get; set; }
-    public string expiration { get; set; }
-    public HighBidderProfile highBidderProfile { get; set; }
-    public SellerProfile sellerProfile { get; set; }
-    public GameItem gameItem { get; set; }
-    public string id { get; set; }
-    public int quantity { get; set; }
-}
-
-public class GetUserAuctions
-{
-    public string nextToken { get; set; }
-    public List<Auction> auctions { get; set; }
 }

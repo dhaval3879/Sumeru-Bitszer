@@ -12,8 +12,6 @@ public class DataProvider : Singleton<DataProvider>
     [Space]
     public GameObject loadingPanel;
 
-    public Profile myProfile;
-
     public async Task<GetUserAuction> GetUserAuctions(string userId, int limit)
     {
         GraphApi.Query getUserActionsQuery = graphApi.GetQueryByName("getUserAuctions", GraphApi.Query.Type.Query);
@@ -30,13 +28,14 @@ public class DataProvider : Singleton<DataProvider>
         loadingPanel.SetActive(true);
 
         var www = await graphApi.Post("getMyProfile", GraphApi.Query.Type.Query);
+
+        while (!www.isDone)
+            return;
+
         var data = JsonConvert.DeserializeObject<Profile>(www.downloadHandler.text);
 
-        if (www.isDone)
-        {
-            myProfile = data;
-            loadingPanel.SetActive(false);
-        }
+        if (data != null)
+            Events.OnProfileReceived.Invoke(data);
     }
 
     public async void GetProfile(string screenName)
@@ -48,22 +47,26 @@ public class DataProvider : Singleton<DataProvider>
         await graphApi.Post(getProfileQuery);
     }
 
-    public async void GetAuctions(string itemName, int limit)
+    public async Task<GetAuction> GetAuctions(string itemName, int limit)
     {
         GraphApi.Query getAuctionsQuery = graphApi.GetQueryByName("getAuctions", GraphApi.Query.Type.Query);
 
         getAuctionsQuery.SetArgs(new { itemName, limit, });
 
-        await graphApi.Post(getAuctionsQuery);
+        var www = await graphApi.Post(getAuctionsQuery);
+        var data = JsonConvert.DeserializeObject<GetAuction>(www.downloadHandler.text);
+        return data;
     }
 
-    public async void GetInventory(int limit)
+    public async Task<GetInventory> GetInventory(int limit)
     {
         GraphApi.Query getInventoryQuery = graphApi.GetQueryByName("getInventory", GraphApi.Query.Type.Query);
 
         getInventoryQuery.SetArgs(new { limit, });
 
-        await graphApi.Post(getInventoryQuery);
+        var www = await graphApi.Post(getInventoryQuery);
+        var data = JsonConvert.DeserializeObject<GetInventory>(www.downloadHandler.text);
+        return data;
     }
 
     public async void GetMyInventoryByGame(int limit, string gameId)

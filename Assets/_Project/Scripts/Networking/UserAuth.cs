@@ -71,7 +71,7 @@ public class UserAuth : MonoBehaviour
             {
                 DataProvider.Instance.GetMyProfile();
                 DataProvider.Instance.loadingPanel.SetActive(false);
-                uiManager.OpenHomePanel();
+                uiManager.OpenTabPanel();
             });
         }
         catch(Exception e)

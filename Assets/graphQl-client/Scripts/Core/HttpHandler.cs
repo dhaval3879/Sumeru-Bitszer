@@ -43,8 +43,6 @@ namespace GraphQlClient.Core
 			OnRequestEnded requestSucceeded = new OnRequestEnded(request.downloadHandler.text);
 			requestSucceeded.FireEvent();
 
-			DataProvider.Instance.loadingPanel.SetActive(false);
-
 			return request;
 		}
 

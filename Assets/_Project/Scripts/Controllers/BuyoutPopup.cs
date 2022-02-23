@@ -2,15 +2,13 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class BuyItem : MonoBehaviour
+public class BuyoutPopup : MonoBehaviour
 {
+    public TMP_Text titleText;
     public RawImage itemImage;
-    public TMP_Text qtyText;
+    public TMP_Text qtyValueText;
     public TMP_Text itemNameText;
     public TMP_Text usernameText;
     public TMP_Text expirationText;
-    public TMP_Text buyoutText;
-    public TMP_Text bidText;
-    public Button buyoutButton;
-    public Button bidButton;
+    public TMP_Text priceText;
 }

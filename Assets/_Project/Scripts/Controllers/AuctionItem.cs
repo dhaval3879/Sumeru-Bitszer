@@ -10,4 +10,7 @@ public class AuctionItem : MonoBehaviour
     public TMP_Text expirationText;
     public TMP_Text buyoutText;
     public TMP_Text bidText;
+    public Button cancelButton;
+    public Button buyoutButton;
+    public Button bidButton;
 }

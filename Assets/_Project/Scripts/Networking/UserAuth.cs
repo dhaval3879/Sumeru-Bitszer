@@ -29,6 +29,11 @@ public class UserAuth : MonoBehaviour
     {
         emailLoginInputField.text = "dhaval3879@gmail.com";
         passwordLoginInputField.text = "sumeru@1234#";
+
+        if(PlayerPrefs.HasKey("email") && PlayerPrefs.HasKey("password"))
+        {
+            LoginUser(PlayerPrefs.GetString("email"), PlayerPrefs.GetString("password"));
+        }
     }
 
     public void SignUpUser()
@@ -38,10 +43,10 @@ public class UserAuth : MonoBehaviour
 
     public void SignInUser()
     {
-        LoginUser();
+        LoginUser(emailLoginInputField.text, passwordLoginInputField.text);
     }
 
-    private async Task LoginUser()
+    private async Task LoginUser(string email, string password)
     {
         DataProvider.Instance.loadingPanel.SetActive(true);
 
@@ -49,11 +54,11 @@ public class UserAuth : MonoBehaviour
 
         CognitoUserPool userPool = new CognitoUserPool(poolId, clientId, provider);
 
-        CognitoUser user = new CognitoUser(emailLoginInputField.text, clientId, userPool, provider);
+        CognitoUser user = new CognitoUser(email, clientId, userPool, provider);
 
         InitiateSrpAuthRequest authRequest = new InitiateSrpAuthRequest()
         {
-            Password = passwordLoginInputField.text,
+            Password = password,
         };
 
         try
@@ -69,6 +74,9 @@ public class UserAuth : MonoBehaviour
 
             UnityMainThread.wkr.AddJob(() =>
             {
+                PlayerPrefs.SetString("email", email);
+                PlayerPrefs.SetString("password", password);
+
                 DataProvider.Instance.GetMyProfile();
                 DataProvider.Instance.loadingPanel.SetActive(false);
                 uiManager.OpenTabPanel();

@@ -19,6 +19,11 @@ public class UIManager : MonoBehaviour
     public GameObject loginPanel;
     public GameObject signupPanel;
     public GameObject tabPanel;
+    public GameObject sellItemPanel;
+    public GameObject buyoutPopup;
+    public GameObject bidPopup;
+    public GameObject cancelPopup;
+
     public Transform buyItemParent;
     public Transform buyItemPrefab;
     public Transform sellItemParent;
@@ -192,6 +197,31 @@ public class UIManager : MonoBehaviour
         buyItem.buyoutText.text = item.buyout.ToString();
         buyItem.bidText.text = item.bid.ToString();
 
+        buyItem.buyoutButton.onClick.AddListener(() =>
+        {
+            buyoutPopup.SetActive(true);
+            var buyoutPopupData = buyoutPopup.GetComponent<BuyoutPopup>();
+            buyoutPopupData.titleText.text = $"Are you sure you want to purchase {buyItem.qtyText.text} {buyItem.itemNameText.text} for {buyItem.buyoutText.text}?";
+            buyoutPopupData.itemImage.texture = buyItem.itemImage.texture;
+            buyoutPopupData.qtyValueText.text = buyItem.qtyText.text;
+            buyoutPopupData.itemNameText.text = buyItem.itemNameText.text;
+            buyoutPopupData.usernameText.text = buyItem.usernameText.text;
+            buyoutPopupData.expirationText.text = buyItem.expirationText.text;
+            buyoutPopupData.priceText.text = buyItem.buyoutText.text;
+        });
+
+        buyItem.bidButton.onClick.AddListener(() =>
+        {
+            bidPopup.SetActive(true);
+            var bidPopupData = bidPopup.GetComponent<BidPopup>();
+            bidPopupData.titleText.text = $"Place bid for {buyItem.itemNameText.text}. Your bid must be greater than {buyItem.bidText.text}.";
+            bidPopupData.itemImage.texture = buyItem.itemImage.texture;
+            bidPopupData.qtyValueText.text = buyItem.qtyText.text;
+            bidPopupData.itemNameText.text = buyItem.itemNameText.text;
+            bidPopupData.usernameText.text = buyItem.usernameText.text;
+            bidPopupData.expirationText.text = buyItem.expirationText.text;
+        });
+
         yield return null;
 
         buyItemsLength++;
@@ -210,6 +240,10 @@ public class UIManager : MonoBehaviour
         var count = _.Result.data.getInventory.inventory.Count;
 
         var item = _.Result.data.getInventory.inventory[sellItemsLength];
+
+        if (item.ItemCount.Equals(0))
+            yield break;
+
         GameObject go = Instantiate(sellItemPrefab.gameObject, sellItemParent);
         var sellItem = go.GetComponent<SellItem>();
         StartCoroutine(GetImageFromUrl(item.gameItem.imageUrl, texture =>
@@ -218,6 +252,19 @@ public class UIManager : MonoBehaviour
         }));
         sellItem.itemNameText.text = item.gameItem.itemName;
         sellItem.availableText.text = item.ItemCount.ToString();
+
+        sellItem.sellButton.onClick.AddListener(() =>
+        {
+            sellItemPanel.SetActive(true);
+            var sellItemPanelData = sellItemPanel.GetComponent<SellItemPanel>();
+            sellItemPanelData.usernameText.text = _profile.data.getMyProfile.name;
+            sellItemPanelData.balanceText.text = _profile.data.getMyProfile.balance.ToString();
+            sellItemPanelData.itemImage.texture = sellItem.itemImage.texture;
+            sellItemPanelData.qtyValueText.text = sellItem.availableText.text;
+            sellItemPanelData.itemsSoldValueInputField.text = sellItem.availableText.text;
+            sellItemPanelData.itemNameText.text = sellItem.itemNameText.text;
+            sellItemPanelData.totalItemsValueText.text = sellItem.availableText.text;
+        });
 
         yield return null;
 
@@ -248,6 +295,42 @@ public class UIManager : MonoBehaviour
         auctionItem.expirationText.text = item.expiration;
         auctionItem.buyoutText.text = item.buyout.ToString();
         auctionItem.bidText.text = item.bid.ToString();
+
+        auctionItem.cancelButton.onClick.AddListener(() =>
+        {
+            cancelPopup.SetActive(true);
+            var cancelPopupData = cancelPopup.GetComponent<CancelPopup>();
+            cancelPopupData.titleText.text = $"Are you sure you want to cancel {auctionItem.itemNameText.text}";
+            cancelPopupData.itemImage.texture = auctionItem.itemImage.texture;
+            cancelPopupData.qtyText.text = auctionItem.qtyText.text;
+            cancelPopupData.itemNameText.text = auctionItem.itemNameText.text;
+            cancelPopupData.expirationText.text = auctionItem.expirationText.text;
+        });
+
+        auctionItem.buyoutButton.onClick.AddListener(() =>
+        {
+            buyoutPopup.SetActive(true);
+            var buyoutPopupData = buyoutPopup.GetComponent<BuyoutPopup>();
+            buyoutPopupData.titleText.text = $"Are you sure you want to purchase {auctionItem.qtyText.text} {auctionItem.itemNameText.text} for {auctionItem.buyoutText.text}?";
+            buyoutPopupData.itemImage.texture = auctionItem.itemImage.texture;
+            buyoutPopupData.qtyValueText.text = auctionItem.qtyText.text;
+            buyoutPopupData.itemNameText.text = auctionItem.itemNameText.text;
+            buyoutPopupData.usernameText.text = "";
+            buyoutPopupData.expirationText.text = auctionItem.expirationText.text;
+            buyoutPopupData.priceText.text = auctionItem.buyoutText.text;
+        });
+
+        auctionItem.bidButton.onClick.AddListener(() =>
+        {
+            bidPopup.SetActive(true);
+            var bidPopupData = bidPopup.GetComponent<BidPopup>();
+            bidPopupData.titleText.text = $"Place bid for {auctionItem.itemNameText.text}. Your bid must be greater than {auctionItem.bidText.text}.";
+            bidPopupData.itemImage.texture = auctionItem.itemImage.texture;
+            bidPopupData.qtyValueText.text = auctionItem.qtyText.text;
+            bidPopupData.itemNameText.text = auctionItem.itemNameText.text;
+            bidPopupData.usernameText.text = "";
+            bidPopupData.expirationText.text = auctionItem.expirationText.text;
+        });
 
         yield return null;
 

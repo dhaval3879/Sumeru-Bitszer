@@ -3,15 +3,6 @@ using System;
 public static class Events
 {
     public static readonly Evt<Profile> OnProfileReceived = new Evt<Profile>();
-
-    // To Invoke
-    // Events.actionWithoutAnyParams.Invoke();
-
-    // To Subscribe
-    // Events.actionWithoutAnyParams.AddListener(MethodName);
-
-    // To Unsubscribe
-    // Events.actionWithoutAnyParams.RemoveListener(MethodName);
 }
 
 public class Evt

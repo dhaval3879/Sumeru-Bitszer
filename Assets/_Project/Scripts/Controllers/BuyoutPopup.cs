@@ -11,4 +11,5 @@ public class BuyoutPopup : MonoBehaviour
     public TMP_Text usernameText;
     public TMP_Text expirationText;
     public TMP_Text priceText;
+    public Button confirmButton;
 }

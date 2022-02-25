@@ -7,11 +7,13 @@ public class DataProvider : Singleton<DataProvider>
 {
     [Header("Scriptable Object")]
     public GraphApi graphApi;
+    public Configuration configuration;
 
     [Space]
     [Space]
     public GameObject loadingPanel;
 
+    #region QUERIES
     public async Task<GetUserAuction> GetUserAuctions(string userId, int limit)
     {
         GraphApi.Query getUserActionsQuery = graphApi.GetQueryByName("getUserAuctions", GraphApi.Query.Type.Query);
@@ -69,30 +71,71 @@ public class DataProvider : Singleton<DataProvider>
         return data;
     }
 
-    public async void GetMyInventoryByGame(int limit, string gameId)
+    public async void GetMyInventoryByGame(int limit)
     {
         GraphApi.Query getMyInventorybyGameQuery = graphApi.GetQueryByName("getMyInventorybyGame", GraphApi.Query.Type.Query);
 
-        getMyInventorybyGameQuery.SetArgs(new { limit, gameId, });
+        getMyInventorybyGameQuery.SetArgs(new { limit, configuration.gameId, });
 
         await graphApi.Post(getMyInventorybyGameQuery);
     }
 
-    public async void GetAuctionsByGame(string gameId, int limit)
+    public async Task<GetAuctionbyGame> GetAuctionsByGame(int limit)
     {
         GraphApi.Query getAuctionsbyGameQuery = graphApi.GetQueryByName("getAuctionsbyGame", GraphApi.Query.Type.Query);
 
-        getAuctionsbyGameQuery.SetArgs(new { gameId, limit, });
+        getAuctionsbyGameQuery.SetArgs(new { configuration.gameId, limit, });
 
-        await graphApi.Post(getAuctionsbyGameQuery);
+        var www = await graphApi.Post(getAuctionsbyGameQuery);
+        var data = JsonConvert.DeserializeObject<GetAuctionbyGame>(www.downloadHandler.text);
+        return data;
     }
 
-    public async void GetGameItemsByGame(string gameId, int limit)
+    public async void GetGameItemsByGame(int limit)
     {
         GraphApi.Query getGameItemsbyGameQuery = graphApi.GetQueryByName("getGameItemsbyGame", GraphApi.Query.Type.Query);
 
-        getGameItemsbyGameQuery.SetArgs(new { gameId, limit, });
+        getGameItemsbyGameQuery.SetArgs(new { configuration.gameId, limit, });
 
         await graphApi.Post(getGameItemsbyGameQuery);
     }
+    #endregion
+
+    #region MUTATIONS
+    public async void CancelAuction(string auctionId)
+    {
+        GraphApi.Query cancelAuctionMutation = graphApi.GetQueryByName("cancelAuction", GraphApi.Query.Type.Mutation);
+
+        cancelAuctionMutation.SetArgs(new { auctionId, });
+
+        await graphApi.Post(cancelAuctionMutation);
+    }
+
+    public async void Buyout(string auctionId)
+    {
+        GraphApi.Query buyoutMutation = graphApi.GetQueryByName("buyout", GraphApi.Query.Type.Mutation);
+
+        buyoutMutation.SetArgs(new { auctionId, });
+
+        await graphApi.Post(buyoutMutation);
+    }
+
+    public async void Bid(string auctionId, float bid)
+    {
+        GraphApi.Query bidMutation = graphApi.GetQueryByName("bid", GraphApi.Query.Type.Mutation);
+
+        bidMutation.SetArgs(new { auctionId, bid, });
+
+        await graphApi.Post(bidMutation);
+    }
+
+    public async void CreateAuction(AuctionInput newAuction)
+    {
+        GraphApi.Query createAuctionMutation = graphApi.GetQueryByName("createAuction", GraphApi.Query.Type.Mutation);
+
+        createAuctionMutation.SetArgs(new { newAuction, });
+
+        await graphApi.Post(createAuctionMutation);
+    }
+    #endregion
 }

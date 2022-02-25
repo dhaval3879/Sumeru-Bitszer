@@ -36,6 +36,12 @@ public class SellItemPanel : MonoBehaviour
     [Space]
     public TMP_Dropdown sellDurationDropdown;
 
+    [Header("Buttons")]
+    [Space]
+    [Space]
+    public Button confirmButton;
+    public Button resetAllButton;
+
     private void Start()
     {
         buyoutItemValueInputField.onValueChanged.AddListener(value =>

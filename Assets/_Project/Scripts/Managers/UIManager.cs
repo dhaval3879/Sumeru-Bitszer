@@ -38,10 +38,12 @@ public class UIManager : MonoBehaviour
     private int myAuctionsLength = 0;
 
     private Profile _profile;
+    private string _nextToken = null;
 
     private void OnEnable()
     {
         Events.OnProfileReceived.AddListener(OnProfileReceived);
+        Events.OnMyAuctionsScrolledToBottom.AddListener(OnMyAuctionsScrolledToBottom);
 
         homeToggle.onValueChanged.AddListener(HomeToggleValueChanged);
         buyToggle.onValueChanged.AddListener(BuyToggleValueChanged);
@@ -52,6 +54,7 @@ public class UIManager : MonoBehaviour
     private void OnDisable()
     {
         Events.OnProfileReceived.RemoveListener(OnProfileReceived);
+        Events.OnMyAuctionsScrolledToBottom.RemoveListener(OnMyAuctionsScrolledToBottom);
 
         homeToggle.onValueChanged.RemoveListener(HomeToggleValueChanged);
         buyToggle.onValueChanged.RemoveListener(BuyToggleValueChanged);
@@ -65,6 +68,11 @@ public class UIManager : MonoBehaviour
 
         usernameText.text = _profile.data.getMyProfile.name;
         balanceText.text = _profile.data.getMyProfile.balance.ToString();
+    }
+
+    private void OnMyAuctionsScrolledToBottom()
+    {
+        StartCoroutine(GetAuctionsByGameData(10, _nextToken));
     }
 
     private void HomeToggleValueChanged(bool isOn)
@@ -88,7 +96,7 @@ public class UIManager : MonoBehaviour
 
             titleText.text = "Buy";
 
-            GetBuyData("", 10);
+            GetBuyData("", 10, null);
         }
     }
 
@@ -99,7 +107,7 @@ public class UIManager : MonoBehaviour
             buyItemParent.Clear();
             auctionItemParent.Clear();
 
-            GetSellData(10);
+            GetSellData(10, null);
 
             titleText.text = "Sell";
         }
@@ -112,7 +120,7 @@ public class UIManager : MonoBehaviour
             buyItemParent.Clear();
             sellItemParent.Clear();
 
-            GetAuctionsByGameData(10);
+            StartCoroutine(GetAuctionsByGameData(10, null));
 
             titleText.text = "My Auctions";
         }
@@ -139,13 +147,13 @@ public class UIManager : MonoBehaviour
         tabPanel.SetActive(true);
     }
 
-    public void GetBuyData(string itemName, int limit)
+    public void GetBuyData(string itemName, int limit, string nextToken)
     {
         DataProvider dataProvider = DataProvider.Instance;
         dataProvider.loadingPanel.SetActive(true);
 
         buyItemsLength = 0;
-        var getAuction = dataProvider.GetAuctions(itemName, limit);
+        var getAuction = dataProvider.GetAuctions(itemName, limit, nextToken);
 
         getAuction.ContinueWith(_ =>
         {
@@ -162,13 +170,13 @@ public class UIManager : MonoBehaviour
         });
     }
 
-    public void GetSellData(int limit)
+    public void GetSellData(int limit, string nextToken)
     {
         DataProvider dataProvider = DataProvider.Instance;
         //dataProvider.loadingPanel.SetActive(true);
 
         sellItemsLength = 0;
-        var getInventory = dataProvider.GetInventory(limit);
+        var getInventory = dataProvider.GetInventory(limit, nextToken);
 
         getInventory.ContinueWith(_ =>
         {
@@ -182,24 +190,27 @@ public class UIManager : MonoBehaviour
         });
     }
 
-    public void GetAuctionsByGameData(int limit)
+    public IEnumerator GetAuctionsByGameData(int limit, string nextToken)
     {
         DataProvider dataProvider = DataProvider.Instance;
         dataProvider.loadingPanel.SetActive(true);
 
         myAuctionsLength = 0;
-        var getAuctionsByGame = dataProvider.GetAuctionsByGame(limit);
+
+        GetAuctionbyGame result = null;
+        var getAuctionsByGame = dataProvider.GetAuctionsByGame(limit, nextToken);
 
         getAuctionsByGame.ContinueWith(_ =>
         {
             if (_.IsCompleted)
             {
-                UnityMainThread.wkr.AddJob(() =>
-                {
-                    StartCoroutine(PopulateAuctionsByGameData(_));
-                });
+                result = _.Result;
             }
         });
+
+        yield return new WaitUntil(() => result != null);
+
+        StartCoroutine(PopulateAuctionsByGameData(result));
     }
 
     private IEnumerator PopulateBuyData(Task<GetAuction> _)
@@ -320,7 +331,7 @@ public class UIManager : MonoBehaviour
         sellItem.sellButton.onClick.AddListener(() =>
         {
             similarItemParent.Clear();
-            GetBuyData(item.gameItem.itemName, 10);
+            GetBuyData(item.gameItem.itemName, 10, null);
 
             var sellItemPanelData = sellItemPanel.GetComponent<SellItemPanel>();
             sellItemPanelData.usernameText.text = _profile.data.getMyProfile.name;
@@ -382,9 +393,9 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    private IEnumerator PopulateAuctionsByGameData(Task<GetAuctionbyGame> _)
+    private IEnumerator PopulateAuctionsByGameData(GetAuctionbyGame result)
     {
-        var count = _.Result.data.getAuctionsbyGame.auctions.Count;
+        var count = result.data.getAuctionsbyGame.auctions.Count;
 
         if (count <= 0)
         {
@@ -392,7 +403,10 @@ public class UIManager : MonoBehaviour
             yield break;
         }
 
-        var item = _.Result.data.getAuctionsbyGame.auctions[myAuctionsLength];
+        if (string.IsNullOrEmpty(result.data.getAuctionsbyGame.nextToken))
+            _nextToken = result.data.getAuctionsbyGame.nextToken;
+
+        var item = result.data.getAuctionsbyGame.auctions[myAuctionsLength];
 
         GameObject go = Instantiate(auctionItemPrefab.gameObject, auctionItemParent);
         var auctionItem = go.GetComponent<AuctionItem>();
@@ -463,10 +477,13 @@ public class UIManager : MonoBehaviour
         myAuctionsLength++;
 
         if (myAuctionsLength < count)
-            StartCoroutine(PopulateAuctionsByGameData(_));
+        {
+            StartCoroutine(PopulateAuctionsByGameData(result));
+        }
         else
         {
             myAuctionsLength = 0;
+
             DataProvider.Instance.loadingPanel.SetActive(false);
         }
     }

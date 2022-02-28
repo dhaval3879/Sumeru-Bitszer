@@ -14,11 +14,14 @@ public class DataProvider : Singleton<DataProvider>
     public GameObject loadingPanel;
 
     #region QUERIES
-    public async Task<GetUserAuction> GetUserAuctions(string userId, int limit)
+    public async Task<GetUserAuction> GetUserAuctions(string userId, int limit, string nextToken)
     {
         GraphApi.Query getUserActionsQuery = graphApi.GetQueryByName("getUserAuctions", GraphApi.Query.Type.Query);
 
-        getUserActionsQuery.SetArgs(new { userId, limit, });
+        if (string.IsNullOrEmpty(nextToken))
+            getUserActionsQuery.SetArgs(new { userId, limit, });
+        else
+            getUserActionsQuery.SetArgs(new { userId, limit, nextToken, });
 
         var www = await graphApi.Post(getUserActionsQuery);
         var data = JsonConvert.DeserializeObject<GetUserAuction>(www.downloadHandler.text);
@@ -49,53 +52,68 @@ public class DataProvider : Singleton<DataProvider>
         await graphApi.Post(getProfileQuery);
     }
 
-    public async Task<GetAuction> GetAuctions(string itemName, int limit)
+    public async Task<GetAuction> GetAuctions(string itemName, int limit, string nextToken)
     {
         GraphApi.Query getAuctionsQuery = graphApi.GetQueryByName("getAuctions", GraphApi.Query.Type.Query);
 
-        getAuctionsQuery.SetArgs(new { itemName, limit, });
+        if (string.IsNullOrEmpty(nextToken))
+            getAuctionsQuery.SetArgs(new { itemName, limit, });
+        else
+            getAuctionsQuery.SetArgs(new { itemName, limit, nextToken, });
 
         var www = await graphApi.Post(getAuctionsQuery);
         var data = JsonConvert.DeserializeObject<GetAuction>(www.downloadHandler.text);
         return data;
     }
 
-    public async Task<GetInventory> GetInventory(int limit)
+    public async Task<GetInventory> GetInventory(int limit, string nextToken)
     {
         GraphApi.Query getInventoryQuery = graphApi.GetQueryByName("getInventory", GraphApi.Query.Type.Query);
 
-        getInventoryQuery.SetArgs(new { limit, });
+        if (string.IsNullOrEmpty(nextToken))
+            getInventoryQuery.SetArgs(new { limit, });
+        else
+            getInventoryQuery.SetArgs(new { limit, nextToken, });
 
         var www = await graphApi.Post(getInventoryQuery);
         var data = JsonConvert.DeserializeObject<GetInventory>(www.downloadHandler.text);
         return data;
     }
 
-    public async void GetMyInventoryByGame(int limit)
+    public async void GetMyInventoryByGame(int limit, string nextToken)
     {
         GraphApi.Query getMyInventorybyGameQuery = graphApi.GetQueryByName("getMyInventorybyGame", GraphApi.Query.Type.Query);
 
-        getMyInventorybyGameQuery.SetArgs(new { limit, configuration.gameId, });
+        if (string.IsNullOrEmpty(nextToken))
+            getMyInventorybyGameQuery.SetArgs(new { limit, configuration.gameId, });
+        else
+            getMyInventorybyGameQuery.SetArgs(new { limit, nextToken, configuration.gameId, });
 
         await graphApi.Post(getMyInventorybyGameQuery);
     }
 
-    public async Task<GetAuctionbyGame> GetAuctionsByGame(int limit)
+    public async Task<GetAuctionbyGame> GetAuctionsByGame(int limit, string nextToken)
     {
         GraphApi.Query getAuctionsbyGameQuery = graphApi.GetQueryByName("getAuctionsbyGame", GraphApi.Query.Type.Query);
 
-        getAuctionsbyGameQuery.SetArgs(new { configuration.gameId, limit, });
+        if (string.IsNullOrEmpty(nextToken))
+            getAuctionsbyGameQuery.SetArgs(new { configuration.gameId, limit, });
+        else
+            getAuctionsbyGameQuery.SetArgs(new { configuration.gameId, limit, nextToken, });
 
         var www = await graphApi.Post(getAuctionsbyGameQuery);
         var data = JsonConvert.DeserializeObject<GetAuctionbyGame>(www.downloadHandler.text);
         return data;
     }
 
-    public async void GetGameItemsByGame(int limit)
+    public async void GetGameItemsByGame(int limit, string nextToken)
     {
         GraphApi.Query getGameItemsbyGameQuery = graphApi.GetQueryByName("getGameItemsbyGame", GraphApi.Query.Type.Query);
 
-        getGameItemsbyGameQuery.SetArgs(new { configuration.gameId, limit, });
+        if (string.IsNullOrEmpty(nextToken))
+            getGameItemsbyGameQuery.SetArgs(new { configuration.gameId, limit, });
+        else
+            getGameItemsbyGameQuery.SetArgs(new { configuration.gameId, limit, nextToken, });
 
         await graphApi.Post(getGameItemsbyGameQuery);
     }

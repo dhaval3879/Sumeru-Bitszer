@@ -3,6 +3,8 @@ using System;
 public static class Events
 {
     public static readonly Evt<Profile> OnProfileReceived = new Evt<Profile>();
+
+    public static readonly Evt OnMyAuctionsScrolledToBottom = new Evt();
 }
 
 public class Evt

@@ -3,6 +3,13 @@ using UnityEngine.UI;
 
 public class ScrollController : MonoBehaviour
 {
+    public enum SCROLL_PANEL : byte
+    {
+        BUY, SELL, MY_AUCTIONS, SIMILAR_ITEMS, 
+    }
+
+    public SCROLL_PANEL scrollPanel;
+
     private ScrollRect _scrollRect;
     private bool _dataLoadingStarted = false;
 
@@ -19,7 +26,7 @@ public class ScrollController : MonoBehaviour
         {
             if (!_dataLoadingStarted)
             {
-                Events.OnMyAuctionsScrolledToBottom.Invoke();
+                Events.OnScrolledToBottom.Invoke(scrollPanel);
 
                 _dataLoadingStarted = true;
             }

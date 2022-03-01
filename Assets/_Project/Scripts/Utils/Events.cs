@@ -4,7 +4,7 @@ public static class Events
 {
     public static readonly Evt<Profile> OnProfileReceived = new Evt<Profile>();
 
-    public static readonly Evt OnMyAuctionsScrolledToBottom = new Evt();
+    public static readonly Evt<ScrollController.SCROLL_PANEL> OnScrolledToBottom = new Evt<ScrollController.SCROLL_PANEL>();
 }
 
 public class Evt

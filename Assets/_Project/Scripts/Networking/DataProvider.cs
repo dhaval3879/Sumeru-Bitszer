@@ -9,10 +9,6 @@ public class DataProvider : Singleton<DataProvider>
     public GraphApi graphApi;
     public Configuration configuration;
 
-    [Space]
-    [Space]
-    public GameObject loadingPanel;
-
     #region QUERIES
     public async Task<GetUserAuction> GetUserAuctions(string userId, int limit, string nextToken)
     {
@@ -30,7 +26,7 @@ public class DataProvider : Singleton<DataProvider>
 
     public async void GetMyProfile()
     {
-        loadingPanel.SetActive(true);
+        APIManager.Instance.RaycastBlock(true);
 
         var www = await graphApi.Post("getMyProfile", GraphApi.Query.Type.Query);
 
@@ -63,6 +59,10 @@ public class DataProvider : Singleton<DataProvider>
 
         var www = await graphApi.Post(getAuctionsQuery);
         var data = JsonConvert.DeserializeObject<GetAuction>(www.downloadHandler.text);
+
+        if (data != null)
+            Events.OnAuctionsReceived.Invoke(data);
+
         return data;
     }
 
@@ -77,6 +77,10 @@ public class DataProvider : Singleton<DataProvider>
 
         var www = await graphApi.Post(getInventoryQuery);
         var data = JsonConvert.DeserializeObject<GetInventory>(www.downloadHandler.text);
+
+        if (data != null)
+            Events.OnInventoryReceived.Invoke(data);
+
         return data;
     }
 
@@ -103,6 +107,10 @@ public class DataProvider : Singleton<DataProvider>
 
         var www = await graphApi.Post(getAuctionsbyGameQuery);
         var data = JsonConvert.DeserializeObject<GetAuctionbyGame>(www.downloadHandler.text);
+
+        if (data != null)
+            Events.OnAuctionsByGameReceived.Invoke(data);
+
         return data;
     }
 
@@ -154,6 +162,24 @@ public class DataProvider : Singleton<DataProvider>
         createAuctionMutation.SetArgs(new { newAuction, });
 
         await graphApi.Post(createAuctionMutation);
+    }
+
+    public async void UpdateInventory(string itemId, int count)
+    {
+        GraphApi.Query updateInventoryMutation = graphApi.GetQueryByName("updateInventory", GraphApi.Query.Type.Mutation);
+
+        updateInventoryMutation.SetArgs(new { configuration.gameId, itemId, count });
+
+        await graphApi.Post(updateInventoryMutation);
+    }
+
+    public async void PushInventory(InventoryDelta[] inventoryDelta)
+    {
+        GraphApi.Query pushInventoryMutation = graphApi.GetQueryByName("pushInventory", GraphApi.Query.Type.Mutation);
+
+        pushInventoryMutation.SetArgs(new { configuration.gameId, inventoryDelta });
+
+        await graphApi.Post(pushInventoryMutation);
     }
     #endregion
 }

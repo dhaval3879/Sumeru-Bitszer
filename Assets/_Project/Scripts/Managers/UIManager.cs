@@ -10,8 +10,14 @@ public class UIManager : MonoBehaviour
     public TMPro.TMP_Text titleText;
     public TMPro.TMP_Text usernameText;
     public TMPro.TMP_Text balanceText;
+    public TMPro.TMP_InputField searchInputField;
 
-    public Toggle homeToggle, buyToggle, sellToggle, myAuctionsToggle;
+    [Space]
+    [Space]
+    public Toggle homeToggle;
+    public Toggle buyToggle;
+    public Toggle sellToggle;
+    public Toggle myAuctionsToggle;
 
     [Space]
     [Space]
@@ -23,7 +29,10 @@ public class UIManager : MonoBehaviour
     public GameObject buyoutPopup;
     public GameObject bidPopup;
     public GameObject cancelPopup;
+    public GameObject searchScrollView;
 
+    [Space]
+    [Space]
     public Transform buyItemParent;
     public Transform buyItemPrefab;
     public Transform sellItemParent;
@@ -31,17 +40,27 @@ public class UIManager : MonoBehaviour
     public Transform auctionItemParent;
     public Transform auctionItemPrefab;
     public Transform similarItemParent;
+    public Transform searchBuyItemParent;
 
     private int buyItemsLength = 0;
     private int sellItemsLength = 0;
     private int myAuctionsLength = 0;
+    private int searchItemsLength = 0;
 
     private Profile _profile;
+    private GetAuction _getAuction;
+    private GetInventory _getInventory;
+    private GetAuctionbyGame _getAuctionbyGame;
+
     private string _nextToken = null;
 
     private void OnEnable()
     {
         Events.OnProfileReceived.AddListener(OnProfileReceived);
+        Events.OnAuctionsReceived.AddListener(OnAuctionsReceived);
+        Events.OnInventoryReceived.AddListener(OnInventoryReceived);
+        Events.OnAuctionsByGameReceived.AddListener(OnAuctionByGameReceived);
+
         Events.OnScrolledToBottom.AddListener(OnScrolledToBottom);
 
         homeToggle.onValueChanged.AddListener(HomeToggleValueChanged);
@@ -53,6 +72,10 @@ public class UIManager : MonoBehaviour
     private void OnDisable()
     {
         Events.OnProfileReceived.RemoveListener(OnProfileReceived);
+        Events.OnAuctionsReceived.RemoveListener(OnAuctionsReceived);
+        Events.OnInventoryReceived.RemoveListener(OnInventoryReceived);
+        Events.OnAuctionsByGameReceived.RemoveListener(OnAuctionByGameReceived);
+
         Events.OnScrolledToBottom.RemoveListener(OnScrolledToBottom);
 
         homeToggle.onValueChanged.RemoveListener(HomeToggleValueChanged);
@@ -61,12 +84,39 @@ public class UIManager : MonoBehaviour
         myAuctionsToggle.onValueChanged.RemoveListener(MyAuctionsToggleValueChanged);
     }
 
+    private void Start()
+    {
+        searchInputField.onValueChanged.AddListener(value =>
+        {
+            if (value.Length <= 0)
+            {
+                searchBuyItemParent.Clear();
+                searchScrollView.SetActive(false);
+            }
+        });
+    }
+
     private void OnProfileReceived(Profile profile)
     {
         _profile = profile;
 
         usernameText.text = _profile.data.getMyProfile.name;
         balanceText.text = _profile.data.getMyProfile.balance.ToString();
+    }
+
+    private void OnAuctionsReceived(GetAuction getAuction)
+    {
+        _getAuction = getAuction;
+    }
+
+    private void OnInventoryReceived(GetInventory getInventory)
+    {
+        _getInventory = getInventory;
+    }
+
+    private void OnAuctionByGameReceived(GetAuctionbyGame getAuctionByGame)
+    {
+        _getAuctionbyGame = getAuctionByGame;
     }
 
     private void OnScrolledToBottom(ScrollController.SCROLL_PANEL scrollPanel)
@@ -82,8 +132,12 @@ public class UIManager : MonoBehaviour
 
         if (!string.IsNullOrEmpty(_nextToken) && scrollPanel.Equals(ScrollController.SCROLL_PANEL.SIMILAR_ITEMS))
             StartCoroutine(GetBuyData("", 10, _nextToken));
+
+        if (!string.IsNullOrEmpty(_nextToken) && scrollPanel.Equals(ScrollController.SCROLL_PANEL.SEARCH_ITEMS))
+            StartCoroutine(GetSearchItemsData("", 10, _nextToken));
     }
 
+    #region Toggle Methods
     private void HomeToggleValueChanged(bool isOn)
     {
         if (isOn)
@@ -133,32 +187,12 @@ public class UIManager : MonoBehaviour
             titleText.text = "My Auctions";
         }
     }
-
-    public void OpenLoginPanel()
-    {
-        loginPanel.SetActive(true);
-        signupPanel.SetActive(false);
-        tabPanel.SetActive(false);
-    }
-
-    public void OpenSignupPanel()
-    {
-        signupPanel.SetActive(true);
-        loginPanel.SetActive(false);
-        tabPanel.SetActive(false);
-    }
-
-    public void OpenTabPanel()
-    {
-        signupPanel.SetActive(false);
-        loginPanel.SetActive(false);
-        tabPanel.SetActive(true);
-    }
+    #endregion
 
     public IEnumerator GetBuyData(string itemName, int limit, string nextToken)
     {
         DataProvider dataProvider = DataProvider.Instance;
-        dataProvider.loadingPanel.SetActive(true);
+        APIManager.Instance.RaycastBlock(true);
 
         buyItemsLength = 0;
 
@@ -182,7 +216,7 @@ public class UIManager : MonoBehaviour
     public IEnumerator GetSellData(int limit, string nextToken)
     {
         DataProvider dataProvider = DataProvider.Instance;
-        dataProvider.loadingPanel.SetActive(true);
+        APIManager.Instance.RaycastBlock(true);
 
         sellItemsLength = 0;
 
@@ -203,7 +237,7 @@ public class UIManager : MonoBehaviour
     public IEnumerator GetAuctionsByGameData(int limit, string nextToken)
     {
         DataProvider dataProvider = DataProvider.Instance;
-        dataProvider.loadingPanel.SetActive(true);
+        APIManager.Instance.RaycastBlock(true);
 
         myAuctionsLength = 0;
 
@@ -221,13 +255,35 @@ public class UIManager : MonoBehaviour
         StartCoroutine(PopulateAuctionsByGameData(result));
     }
 
+    public IEnumerator GetSearchItemsData(string itemName, int limit, string nextToken)
+    {
+        DataProvider dataProvider = DataProvider.Instance;
+        APIManager.Instance.RaycastBlock(true);
+
+        searchItemsLength = 0;
+
+        GetAuction result = null;
+        var getAuction = dataProvider.GetAuctions(itemName, limit, nextToken);
+
+        getAuction.ContinueWith(_ =>
+        {
+            if (_.IsCompleted)
+                result = _.Result;
+        });
+
+        yield return new WaitUntil(() => result != null);
+
+        if (!string.IsNullOrEmpty(itemName))
+            StartCoroutine(PopulateSearchItems(result));
+    }
+
     private IEnumerator PopulateBuyData(GetAuction getAuction)
     {
         var count = getAuction.data.getAuctions.auctions.Count;
         
         if (count <= 0)
         {
-            DataProvider.Instance.loadingPanel.SetActive(false);
+            APIManager.Instance.RaycastBlock(false);
             yield break;
         }
 
@@ -310,7 +366,7 @@ public class UIManager : MonoBehaviour
         else
         {
             buyItemsLength = 0;
-            DataProvider.Instance.loadingPanel.SetActive(false);
+            APIManager.Instance.RaycastBlock(false);
         }
     }
 
@@ -320,7 +376,7 @@ public class UIManager : MonoBehaviour
 
         if (count <= 0)
         {
-            DataProvider.Instance.loadingPanel.SetActive(false);
+            APIManager.Instance.RaycastBlock(false);
             yield break;
         }
 
@@ -398,7 +454,7 @@ public class UIManager : MonoBehaviour
         else
         {
             sellItemsLength = 0;
-            DataProvider.Instance.loadingPanel.SetActive(false);
+            APIManager.Instance.RaycastBlock(false);
         }
     }
 
@@ -408,7 +464,7 @@ public class UIManager : MonoBehaviour
 
         if (count <= 0)
         {
-            DataProvider.Instance.loadingPanel.SetActive(false);
+            APIManager.Instance.RaycastBlock(false);
             yield break;
         }
 
@@ -427,6 +483,9 @@ public class UIManager : MonoBehaviour
         auctionItem.expirationText.text = item.expiration;
         auctionItem.buyoutText.text = item.buyout.ToString();
         auctionItem.bidText.text = item.bid.ToString();
+
+        if (!item.sellerProfile.id.Equals(_profile.data.getMyProfile.id))
+            auctionItem.cancelButton.gameObject.SetActive(false);
 
         auctionItem.cancelButton.onClick.AddListener(() =>
         {
@@ -489,7 +548,7 @@ public class UIManager : MonoBehaviour
         else
         {
             myAuctionsLength = 0;
-            DataProvider.Instance.loadingPanel.SetActive(false);
+            APIManager.Instance.RaycastBlock(false);
         }
     }
 
@@ -499,7 +558,7 @@ public class UIManager : MonoBehaviour
 
         if (count <= 0)
         {
-            DataProvider.Instance.loadingPanel.SetActive(false);
+            APIManager.Instance.RaycastBlock(false);
             yield break;
         }
 
@@ -581,7 +640,100 @@ public class UIManager : MonoBehaviour
         else
         {
             buyItemsLength = 0;
-            DataProvider.Instance.loadingPanel.SetActive(false);
+            APIManager.Instance.RaycastBlock(false);
+        }
+    }
+
+    private IEnumerator PopulateSearchItems(GetAuction getAuction)
+    {
+        var count = getAuction.data.getAuctions.auctions.Count;
+
+        if (count <= 0)
+        {
+            APIManager.Instance.RaycastBlock(false);
+            yield break;
+        }
+
+        _nextToken = getAuction.data.getAuctions.nextToken;
+
+        var item = getAuction.data.getAuctions.auctions[searchItemsLength];
+
+        GameObject go = Instantiate(buyItemPrefab.gameObject, searchBuyItemParent);
+        var buyItem = go.GetComponent<BuyItem>();
+        StartCoroutine(GetImageFromUrl(item.gameItem.imageUrl, texture =>
+        {
+            buyItem.itemImage.texture = texture;
+        }));
+        buyItem.qtyText.text = item.quantity.ToString();
+        buyItem.itemNameText.text = item.gameItem.itemName;
+        buyItem.usernameText.text = item.sellerProfile.name;
+        buyItem.expirationText.text = item.expiration;
+        buyItem.buyoutText.text = item.buyout.ToString();
+        buyItem.bidText.text = item.bid.ToString();
+
+        buyItem.usernameButton.onClick.AddListener(() =>
+        {
+            var profilePopupData = profilePopup.GetComponent<ProfilePopup>();
+            StartCoroutine(GetImageFromUrl(item.sellerProfile.imageUrl, texture =>
+            {
+                profilePopupData.profileImage.texture = texture;
+            }));
+            profilePopupData.usernameText.text = item.sellerProfile.screenName;
+            profilePopupData.titleText.text = item.sellerProfile.title;
+            profilePopupData.lifetimePurchasedText.text = item.sellerProfile.buyCount.ToString();
+            profilePopupData.lifetimeSpentText.text = item.sellerProfile.buyAmount.ToString();
+            profilePopupData.lifetimeSoldText.text = item.sellerProfile.soldCount.ToString();
+            profilePopupData.lifetimeEarnedText.text = item.sellerProfile.soldAmount.ToString();
+
+            profilePopup.SetActive(true);
+        });
+
+        buyItem.buyoutButton.onClick.AddListener(() =>
+        {
+            buyoutPopup.SetActive(true);
+            var buyoutPopupData = buyoutPopup.GetComponent<BuyoutPopup>();
+            buyoutPopupData.titleText.text = $"Are you sure you want to purchase {buyItem.qtyText.text} {buyItem.itemNameText.text} for {buyItem.buyoutText.text}?";
+            buyoutPopupData.itemImage.texture = buyItem.itemImage.texture;
+            buyoutPopupData.qtyValueText.text = buyItem.qtyText.text;
+            buyoutPopupData.itemNameText.text = buyItem.itemNameText.text;
+            buyoutPopupData.usernameText.text = buyItem.usernameText.text;
+            buyoutPopupData.expirationText.text = buyItem.expirationText.text;
+            buyoutPopupData.priceText.text = buyItem.buyoutText.text;
+
+            buyoutPopupData.confirmButton.onClick.AddListener(() =>
+            {
+                DataProvider.Instance.Buyout(item.id);
+            });
+        });
+
+        buyItem.bidButton.onClick.AddListener(() =>
+        {
+            bidPopup.SetActive(true);
+            var bidPopupData = bidPopup.GetComponent<BidPopup>();
+            bidPopupData.titleText.text = $"Place bid for {buyItem.itemNameText.text}. Your bid must be greater than {buyItem.bidText.text}.";
+            bidPopupData.itemImage.texture = buyItem.itemImage.texture;
+            bidPopupData.qtyValueText.text = buyItem.qtyText.text;
+            bidPopupData.itemNameText.text = buyItem.itemNameText.text;
+            bidPopupData.usernameText.text = buyItem.usernameText.text;
+            bidPopupData.expirationText.text = buyItem.expirationText.text;
+
+            bidPopupData.confirmButton.onClick.AddListener(() =>
+            {
+                DataProvider.Instance.Bid(item.id, float.Parse(bidPopupData.totalBidInputField.text));
+            });
+        });
+
+        yield return null;
+
+        searchItemsLength++;
+
+        if (searchItemsLength < count)
+            StartCoroutine(PopulateSearchItems(getAuction));
+        else
+        {
+            searchScrollView.SetActive(true);
+            searchItemsLength = 0;
+            APIManager.Instance.RaycastBlock(false);
         }
     }
 
@@ -593,8 +745,36 @@ public class UIManager : MonoBehaviour
         if (request.result == UnityWebRequest.Result.ConnectionError)
             Debug.Log(request.error);
         else
-        {
             texture(((DownloadHandlerTexture)request.downloadHandler).texture);
+    }
+
+    public void SearchButton()
+    {
+        if (!string.IsNullOrEmpty(searchInputField.text))
+        {
+            searchBuyItemParent.Clear();
+            StartCoroutine(GetSearchItemsData(searchInputField.text, 10, ""));
         }
+    }
+
+    public void OpenLoginPanel()
+    {
+        loginPanel.SetActive(true);
+        signupPanel.SetActive(false);
+        tabPanel.SetActive(false);
+    }
+
+    public void OpenSignupPanel()
+    {
+        signupPanel.SetActive(true);
+        loginPanel.SetActive(false);
+        tabPanel.SetActive(false);
+    }
+
+    public void OpenTabPanel()
+    {
+        signupPanel.SetActive(false);
+        loginPanel.SetActive(false);
+        tabPanel.SetActive(true);
     }
 }

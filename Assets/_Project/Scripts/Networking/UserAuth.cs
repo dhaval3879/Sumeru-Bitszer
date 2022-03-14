@@ -17,7 +17,6 @@ public class UserAuth : MonoBehaviour
     public TMP_InputField passwordLoginInputField;
 
     [Header("Signup UI")]
-    public TMP_InputField fullNameSignupInputField;
     public TMP_InputField emailSignupInputField;
     public TMP_InputField passwordSignupInputField;
     public TMP_InputField confirmPasswordSignupInputField;
@@ -25,8 +24,12 @@ public class UserAuth : MonoBehaviour
     private string poolId = "us-west-2_wItToCbsB";
     private string clientId = "553o5tjm99c10p22m6aopmtaat";
 
+    private AmazonCognitoIdentityProviderClient _provider;
+
     private void Start()
     {
+        _provider = new AmazonCognitoIdentityProviderClient(new Amazon.Runtime.AnonymousAWSCredentials(), Amazon.RegionEndpoint.USWest2);
+
         emailLoginInputField.text = "dhaval3879@gmail.com";
         passwordLoginInputField.text = "sumeru@1234#";
 
@@ -48,13 +51,11 @@ public class UserAuth : MonoBehaviour
 
     private async Task LoginUser(string email, string password)
     {
-        DataProvider.Instance.loadingPanel.SetActive(true);
+        APIManager.Instance.RaycastBlock(true);
 
-        AmazonCognitoIdentityProviderClient provider = new AmazonCognitoIdentityProviderClient(new Amazon.Runtime.AnonymousAWSCredentials(), Amazon.RegionEndpoint.USWest2);
+        CognitoUserPool userPool = new CognitoUserPool(poolId, clientId, _provider);
 
-        CognitoUserPool userPool = new CognitoUserPool(poolId, clientId, provider);
-
-        CognitoUser user = new CognitoUser(email, clientId, userPool, provider);
+        CognitoUser user = new CognitoUser(email, clientId, userPool, _provider);
 
         InitiateSrpAuthRequest authRequest = new InitiateSrpAuthRequest()
         {
@@ -78,7 +79,7 @@ public class UserAuth : MonoBehaviour
                 PlayerPrefs.SetString("password", password);
 
                 DataProvider.Instance.GetMyProfile();
-                DataProvider.Instance.loadingPanel.SetActive(false);
+                APIManager.Instance.RaycastBlock(false);
                 uiManager.OpenTabPanel();
             });
         }
@@ -91,8 +92,6 @@ public class UserAuth : MonoBehaviour
 
     private async Task RegisterUser()
     {
-        AmazonCognitoIdentityProviderClient provider = new AmazonCognitoIdentityProviderClient(new Amazon.Runtime.AnonymousAWSCredentials(), Amazon.RegionEndpoint.USWest2);
-
         SignUpRequest signUpRequest = new SignUpRequest()
         {
             ClientId = clientId,
@@ -102,7 +101,6 @@ public class UserAuth : MonoBehaviour
 
         List<AttributeType> attributes = new List<AttributeType>()
         {
-            new AttributeType() { Name = "fullName", Value = fullNameSignupInputField.text },
             new AttributeType() { Name = "email", Value = emailSignupInputField.text },
         };
 
@@ -110,7 +108,7 @@ public class UserAuth : MonoBehaviour
 
         try
         {
-            SignUpResponse request = await provider.SignUpAsync(signUpRequest);
+            SignUpResponse request = await _provider.SignUpAsync(signUpRequest);
             Debug.Log("Signed up");
         }
         catch(Exception e)

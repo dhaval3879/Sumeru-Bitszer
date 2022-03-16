@@ -26,7 +26,7 @@ public class UserAuth : MonoBehaviour
 
     private AmazonCognitoIdentityProviderClient _provider;
 
-    private void Start()
+    public void Start()
     {
         _provider = new AmazonCognitoIdentityProviderClient(new Amazon.Runtime.AnonymousAWSCredentials(), Amazon.RegionEndpoint.USWest2);
 
@@ -37,6 +37,8 @@ public class UserAuth : MonoBehaviour
         {
             LoginUser(PlayerPrefs.GetString("email"), PlayerPrefs.GetString("password"));
         }
+        else
+            LoginUser(emailLoginInputField.text, passwordLoginInputField.text);
     }
 
     public void SignUpUser()
@@ -69,7 +71,7 @@ public class UserAuth : MonoBehaviour
             GetUserRequest getUserRequest = new GetUserRequest();
             getUserRequest.AccessToken = authResponse.AuthenticationResult.AccessToken;
 
-            DataProvider.Instance.graphApi.SetAuthToken(getUserRequest.AccessToken);
+            AuctionHouse.Instance.graphApi.SetAuthToken(getUserRequest.AccessToken);
 
             Debug.Log("User Access Token: " + getUserRequest.AccessToken);
 
@@ -78,7 +80,7 @@ public class UserAuth : MonoBehaviour
                 PlayerPrefs.SetString("email", email);
                 PlayerPrefs.SetString("password", password);
 
-                DataProvider.Instance.GetMyProfile();
+                AuctionHouse.Instance.GetMyProfile();
                 APIManager.Instance.RaycastBlock(false);
                 uiManager.OpenTabPanel();
             });

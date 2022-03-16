@@ -82,4 +82,15 @@ public class APIManager : Singleton<APIManager>
                 RaycastBlock(false);
         }));
     }
+
+    public IEnumerator GetImageFromUrl(string url, Action<Texture> texture)
+    {
+        UnityWebRequest request = UnityWebRequestTexture.GetTexture(url);
+        yield return request.SendWebRequest();
+
+        if (request.result == UnityWebRequest.Result.ConnectionError)
+            Debug.Log(request.error);
+        else
+            texture(((DownloadHandlerTexture)request.downloadHandler).texture);
+    }
 }

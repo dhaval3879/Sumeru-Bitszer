@@ -1,8 +1,6 @@
-using System;
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
-using UnityEngine.Networking;
 
 public class UIManager : MonoBehaviour
 {
@@ -42,25 +40,19 @@ public class UIManager : MonoBehaviour
     public Transform similarItemParent;
     public Transform searchBuyItemParent;
 
-    private int buyItemsLength = 0;
-    private int sellItemsLength = 0;
-    private int myAuctionsLength = 0;
-    private int searchItemsLength = 0;
+    private int _buyItemsLength = 0;
+    private int _sellItemsLength = 0;
+    private int _myAuctionsLength = 0;
+    private int _searchItemsLength = 0;
 
     private Profile _profile;
-    private GetAuction _getAuction;
-    private GetInventory _getInventory;
-    private GetAuctionbyGame _getAuctionbyGame;
 
     private string _nextToken = null;
 
+    #region Unity Methods
     private void OnEnable()
     {
         Events.OnProfileReceived.AddListener(OnProfileReceived);
-        Events.OnAuctionsReceived.AddListener(OnAuctionsReceived);
-        Events.OnInventoryReceived.AddListener(OnInventoryReceived);
-        Events.OnAuctionsByGameReceived.AddListener(OnAuctionByGameReceived);
-
         Events.OnScrolledToBottom.AddListener(OnScrolledToBottom);
 
         homeToggle.onValueChanged.AddListener(HomeToggleValueChanged);
@@ -72,10 +64,6 @@ public class UIManager : MonoBehaviour
     private void OnDisable()
     {
         Events.OnProfileReceived.RemoveListener(OnProfileReceived);
-        Events.OnAuctionsReceived.RemoveListener(OnAuctionsReceived);
-        Events.OnInventoryReceived.RemoveListener(OnInventoryReceived);
-        Events.OnAuctionsByGameReceived.RemoveListener(OnAuctionByGameReceived);
-
         Events.OnScrolledToBottom.RemoveListener(OnScrolledToBottom);
 
         homeToggle.onValueChanged.RemoveListener(HomeToggleValueChanged);
@@ -95,28 +83,15 @@ public class UIManager : MonoBehaviour
             }
         });
     }
+    #endregion
 
+    #region Action Methods
     private void OnProfileReceived(Profile profile)
     {
         _profile = profile;
 
         usernameText.text = _profile.data.getMyProfile.name;
         balanceText.text = _profile.data.getMyProfile.balance.ToString();
-    }
-
-    private void OnAuctionsReceived(GetAuction getAuction)
-    {
-        _getAuction = getAuction;
-    }
-
-    private void OnInventoryReceived(GetInventory getInventory)
-    {
-        _getInventory = getInventory;
-    }
-
-    private void OnAuctionByGameReceived(GetAuctionbyGame getAuctionByGame)
-    {
-        _getAuctionbyGame = getAuctionByGame;
     }
 
     private void OnScrolledToBottom(ScrollController.SCROLL_PANEL scrollPanel)
@@ -136,6 +111,7 @@ public class UIManager : MonoBehaviour
         if (!string.IsNullOrEmpty(_nextToken) && scrollPanel.Equals(ScrollController.SCROLL_PANEL.SEARCH_ITEMS))
             StartCoroutine(GetSearchItemsData("", 10, _nextToken));
     }
+    #endregion
 
     #region Toggle Methods
     private void HomeToggleValueChanged(bool isOn)
@@ -189,12 +165,13 @@ public class UIManager : MonoBehaviour
     }
     #endregion
 
+    #region Get Data
     public IEnumerator GetBuyData(string itemName, int limit, string nextToken)
     {
-        DataProvider dataProvider = DataProvider.Instance;
+        AuctionHouse dataProvider = AuctionHouse.Instance;
         APIManager.Instance.RaycastBlock(true);
 
-        buyItemsLength = 0;
+        _buyItemsLength = 0;
 
         GetAuction result = null;
         var getAuction = dataProvider.GetAuctions(itemName, limit, nextToken);
@@ -215,10 +192,10 @@ public class UIManager : MonoBehaviour
 
     public IEnumerator GetSellData(int limit, string nextToken)
     {
-        DataProvider dataProvider = DataProvider.Instance;
+        AuctionHouse dataProvider = AuctionHouse.Instance;
         APIManager.Instance.RaycastBlock(true);
 
-        sellItemsLength = 0;
+        _sellItemsLength = 0;
 
         GetInventory result = null;
         var getInventory = dataProvider.GetInventory(limit, nextToken);
@@ -236,10 +213,10 @@ public class UIManager : MonoBehaviour
 
     public IEnumerator GetAuctionsByGameData(int limit, string nextToken)
     {
-        DataProvider dataProvider = DataProvider.Instance;
+        AuctionHouse dataProvider = AuctionHouse.Instance;
         APIManager.Instance.RaycastBlock(true);
 
-        myAuctionsLength = 0;
+        _myAuctionsLength = 0;
 
         GetAuctionbyGame result = null;
         var getAuctionsByGame = dataProvider.GetAuctionsByGame(limit, nextToken);
@@ -257,10 +234,10 @@ public class UIManager : MonoBehaviour
 
     public IEnumerator GetSearchItemsData(string itemName, int limit, string nextToken)
     {
-        DataProvider dataProvider = DataProvider.Instance;
+        AuctionHouse dataProvider = AuctionHouse.Instance;
         APIManager.Instance.RaycastBlock(true);
 
-        searchItemsLength = 0;
+        _searchItemsLength = 0;
 
         GetAuction result = null;
         var getAuction = dataProvider.GetAuctions(itemName, limit, nextToken);
@@ -276,7 +253,9 @@ public class UIManager : MonoBehaviour
         if (!string.IsNullOrEmpty(itemName))
             StartCoroutine(PopulateSearchItems(result));
     }
+    #endregion
 
+    #region Populate Data
     private IEnumerator PopulateBuyData(GetAuction getAuction)
     {
         var count = getAuction.data.getAuctions.auctions.Count;
@@ -289,11 +268,11 @@ public class UIManager : MonoBehaviour
 
         _nextToken = getAuction.data.getAuctions.nextToken;
 
-        var item = getAuction.data.getAuctions.auctions[buyItemsLength];
+        var item = getAuction.data.getAuctions.auctions[_buyItemsLength];
 
         GameObject go = Instantiate(buyItemPrefab.gameObject, buyItemParent);
         var buyItem = go.GetComponent<BuyItem>();
-        StartCoroutine(GetImageFromUrl(item.gameItem.imageUrl, texture =>
+        StartCoroutine(APIManager.Instance.GetImageFromUrl(item.gameItem.imageUrl, texture =>
         {
             buyItem.itemImage.texture = texture;
         }));
@@ -307,7 +286,7 @@ public class UIManager : MonoBehaviour
         buyItem.usernameButton.onClick.AddListener(() =>
         {
             var profilePopupData = profilePopup.GetComponent<ProfilePopup>();
-            StartCoroutine(GetImageFromUrl(item.sellerProfile.imageUrl, texture =>
+            StartCoroutine(APIManager.Instance.GetImageFromUrl(item.sellerProfile.imageUrl, texture =>
             {
                 profilePopupData.profileImage.texture = texture;
             }));
@@ -335,7 +314,7 @@ public class UIManager : MonoBehaviour
 
             buyoutPopupData.confirmButton.onClick.AddListener(() =>
             {
-                DataProvider.Instance.Buyout(item.id);
+                AuctionHouse.Instance.Buyout(item.id);
             });
         });
 
@@ -353,19 +332,19 @@ public class UIManager : MonoBehaviour
 
             bidPopupData.confirmButton.onClick.AddListener(() =>
             {
-                DataProvider.Instance.Bid(item.id, float.Parse(bidPopupData.totalBidInputField.text));
+                AuctionHouse.Instance.Bid(item.id, float.Parse(bidPopupData.totalBidInputField.text));
             });
         });
 
         yield return null;
 
-        buyItemsLength++;
+        _buyItemsLength++;
 
-        if (buyItemsLength < count)
+        if (_buyItemsLength < count)
             StartCoroutine(PopulateBuyData(getAuction));
         else
         {
-            buyItemsLength = 0;
+            _buyItemsLength = 0;
             APIManager.Instance.RaycastBlock(false);
         }
     }
@@ -382,11 +361,11 @@ public class UIManager : MonoBehaviour
 
         _nextToken = getInventory.data.getInventory.nextToken;
 
-        var item = getInventory.data.getInventory.inventory[sellItemsLength];
+        var item = getInventory.data.getInventory.inventory[_sellItemsLength];
 
         GameObject go = Instantiate(sellItemPrefab.gameObject, sellItemParent);
         var sellItem = go.GetComponent<SellItem>();
-        StartCoroutine(GetImageFromUrl(item.gameItem.imageUrl, texture =>
+        StartCoroutine(APIManager.Instance.GetImageFromUrl(item.gameItem.imageUrl, texture =>
         {
             sellItem.itemImage.texture = texture;
         }));
@@ -408,7 +387,7 @@ public class UIManager : MonoBehaviour
             sellItemPanelData.totalItemsValueText.text = sellItem.availableText.text;
 
             AuctionInput newAuction = new AuctionInput();
-            newAuction.gameId = DataProvider.Instance.configuration.gameId;
+            newAuction.gameId = AuctionHouse.Instance.configuration.gameId;
             newAuction.itemId = item.gameItem.itemId;
 
             int duration = sellItemPanelData.sellDurationDropdown.value switch
@@ -436,7 +415,7 @@ public class UIManager : MonoBehaviour
 
             sellItemPanelData.confirmButton.onClick.AddListener(() =>
             {
-                DataProvider.Instance.CreateAuction(newAuction);
+                AuctionHouse.Instance.CreateAuction(newAuction);
             });
 
             sellItemPanelData.resetAllButton.onClick.AddListener(() =>
@@ -447,13 +426,13 @@ public class UIManager : MonoBehaviour
 
         yield return null;
 
-        sellItemsLength++;
+        _sellItemsLength++;
 
-        if (sellItemsLength < count)
+        if (_sellItemsLength < count)
             StartCoroutine(PopulateSellData(getInventory));
         else
         {
-            sellItemsLength = 0;
+            _sellItemsLength = 0;
             APIManager.Instance.RaycastBlock(false);
         }
     }
@@ -470,11 +449,11 @@ public class UIManager : MonoBehaviour
 
         _nextToken = getAuctionbyGame.data.getAuctionsbyGame.nextToken;
 
-        var item = getAuctionbyGame.data.getAuctionsbyGame.auctions[myAuctionsLength];
+        var item = getAuctionbyGame.data.getAuctionsbyGame.auctions[_myAuctionsLength];
 
         GameObject go = Instantiate(auctionItemPrefab.gameObject, auctionItemParent);
         var auctionItem = go.GetComponent<AuctionItem>();
-        StartCoroutine(GetImageFromUrl(item.gameItem.imageUrl, texture =>
+        StartCoroutine(APIManager.Instance.GetImageFromUrl(item.gameItem.imageUrl, texture =>
         {
             auctionItem.itemImage.texture = texture;
         }));
@@ -499,7 +478,7 @@ public class UIManager : MonoBehaviour
 
             cancelPopupData.cancelAuctionButton.onClick.AddListener(() =>
             {
-                DataProvider.Instance.CancelAuction(item.id);
+                AuctionHouse.Instance.CancelAuction(item.id);
             });
         });
 
@@ -517,7 +496,7 @@ public class UIManager : MonoBehaviour
 
             buyoutPopupData.confirmButton.onClick.AddListener(() =>
             {
-                DataProvider.Instance.Buyout(item.id);
+                AuctionHouse.Instance.Buyout(item.id);
             });
         });
 
@@ -535,19 +514,19 @@ public class UIManager : MonoBehaviour
 
             bidPopupData.confirmButton.onClick.AddListener(() =>
             {
-                DataProvider.Instance.Bid(item.id, float.Parse(bidPopupData.totalBidInputField.text));
+                AuctionHouse.Instance.Bid(item.id, float.Parse(bidPopupData.totalBidInputField.text));
             });
         });
 
         yield return null;
 
-        myAuctionsLength++;
+        _myAuctionsLength++;
 
-        if (myAuctionsLength < count)
+        if (_myAuctionsLength < count)
             StartCoroutine(PopulateAuctionsByGameData(getAuctionbyGame));
         else
         {
-            myAuctionsLength = 0;
+            _myAuctionsLength = 0;
             APIManager.Instance.RaycastBlock(false);
         }
     }
@@ -564,11 +543,11 @@ public class UIManager : MonoBehaviour
 
         _nextToken = getAuction.data.getAuctions.nextToken;
 
-        var item = getAuction.data.getAuctions.auctions[buyItemsLength];
+        var item = getAuction.data.getAuctions.auctions[_buyItemsLength];
 
         GameObject go = Instantiate(buyItemPrefab.gameObject, similarItemParent);
         var buyItem = go.GetComponent<BuyItem>();
-        StartCoroutine(GetImageFromUrl(item.gameItem.imageUrl, texture =>
+        StartCoroutine(APIManager.Instance.GetImageFromUrl(item.gameItem.imageUrl, texture =>
         {
             buyItem.itemImage.texture = texture;
         }));
@@ -582,7 +561,7 @@ public class UIManager : MonoBehaviour
         buyItem.usernameButton.onClick.AddListener(() =>
         {
             var profilePopupData = profilePopup.GetComponent<ProfilePopup>();
-            StartCoroutine(GetImageFromUrl(item.sellerProfile.imageUrl, texture =>
+            StartCoroutine(APIManager.Instance.GetImageFromUrl(item.sellerProfile.imageUrl, texture =>
             {
                 profilePopupData.profileImage.texture = texture;
             }));
@@ -610,7 +589,7 @@ public class UIManager : MonoBehaviour
 
             buyoutPopupData.confirmButton.onClick.AddListener(() =>
             {
-                DataProvider.Instance.Buyout(item.id);
+                AuctionHouse.Instance.Buyout(item.id);
             });
         });
 
@@ -627,19 +606,19 @@ public class UIManager : MonoBehaviour
 
             bidPopupData.confirmButton.onClick.AddListener(() =>
             {
-                DataProvider.Instance.Bid(item.id, float.Parse(bidPopupData.totalBidInputField.text));
+                AuctionHouse.Instance.Bid(item.id, float.Parse(bidPopupData.totalBidInputField.text));
             });
         });
 
         yield return null;
 
-        buyItemsLength++;
+        _buyItemsLength++;
 
-        if (buyItemsLength < count)
+        if (_buyItemsLength < count)
             StartCoroutine(PopulateSimilarItems(getAuction));
         else
         {
-            buyItemsLength = 0;
+            _buyItemsLength = 0;
             APIManager.Instance.RaycastBlock(false);
         }
     }
@@ -656,11 +635,11 @@ public class UIManager : MonoBehaviour
 
         _nextToken = getAuction.data.getAuctions.nextToken;
 
-        var item = getAuction.data.getAuctions.auctions[searchItemsLength];
+        var item = getAuction.data.getAuctions.auctions[_searchItemsLength];
 
         GameObject go = Instantiate(buyItemPrefab.gameObject, searchBuyItemParent);
         var buyItem = go.GetComponent<BuyItem>();
-        StartCoroutine(GetImageFromUrl(item.gameItem.imageUrl, texture =>
+        StartCoroutine(APIManager.Instance.GetImageFromUrl(item.gameItem.imageUrl, texture =>
         {
             buyItem.itemImage.texture = texture;
         }));
@@ -674,7 +653,7 @@ public class UIManager : MonoBehaviour
         buyItem.usernameButton.onClick.AddListener(() =>
         {
             var profilePopupData = profilePopup.GetComponent<ProfilePopup>();
-            StartCoroutine(GetImageFromUrl(item.sellerProfile.imageUrl, texture =>
+            StartCoroutine(APIManager.Instance.GetImageFromUrl(item.sellerProfile.imageUrl, texture =>
             {
                 profilePopupData.profileImage.texture = texture;
             }));
@@ -702,7 +681,7 @@ public class UIManager : MonoBehaviour
 
             buyoutPopupData.confirmButton.onClick.AddListener(() =>
             {
-                DataProvider.Instance.Buyout(item.id);
+                AuctionHouse.Instance.Buyout(item.id);
             });
         });
 
@@ -719,34 +698,24 @@ public class UIManager : MonoBehaviour
 
             bidPopupData.confirmButton.onClick.AddListener(() =>
             {
-                DataProvider.Instance.Bid(item.id, float.Parse(bidPopupData.totalBidInputField.text));
+                AuctionHouse.Instance.Bid(item.id, float.Parse(bidPopupData.totalBidInputField.text));
             });
         });
 
         yield return null;
 
-        searchItemsLength++;
+        _searchItemsLength++;
 
-        if (searchItemsLength < count)
+        if (_searchItemsLength < count)
             StartCoroutine(PopulateSearchItems(getAuction));
         else
         {
             searchScrollView.SetActive(true);
-            searchItemsLength = 0;
+            _searchItemsLength = 0;
             APIManager.Instance.RaycastBlock(false);
         }
     }
-
-    public IEnumerator GetImageFromUrl(string url, Action<Texture> texture)
-    {
-        UnityWebRequest request = UnityWebRequestTexture.GetTexture(url);
-        yield return request.SendWebRequest();
-
-        if (request.result == UnityWebRequest.Result.ConnectionError)
-            Debug.Log(request.error);
-        else
-            texture(((DownloadHandlerTexture)request.downloadHandler).texture);
-    }
+    #endregion
 
     public void SearchButton()
     {
@@ -776,5 +745,10 @@ public class UIManager : MonoBehaviour
         signupPanel.SetActive(false);
         loginPanel.SetActive(false);
         tabPanel.SetActive(true);
+    }
+
+    public void CloseAuctionHouse()
+    {
+        loginPanel.transform.parent.gameObject.SetActive(false);
     }
 }

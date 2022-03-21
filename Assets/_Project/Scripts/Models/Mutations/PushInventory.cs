@@ -1,9 +1,9 @@
 public class PushInventory
 {
-    public PushInventoryData data { get; }
+    public PushInventoryData data { get; set; }
 }
 
 public class PushInventoryData
 {
-    public bool pushInventory { get; }
+    public bool pushInventory { get; set; }
 }

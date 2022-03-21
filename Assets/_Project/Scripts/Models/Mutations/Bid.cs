@@ -1,9 +1,9 @@
 public class Bid
 {
-    public BidData data { get; }
+    public BidData data { get; set; }
 }
 
 public class BidData
 {
-    public bool bid { get; }
+    public bool bid { get; set; }
 }

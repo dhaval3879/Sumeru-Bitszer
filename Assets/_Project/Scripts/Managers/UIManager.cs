@@ -101,19 +101,19 @@ namespace Bitszer
         private void OnScrolledToBottom(ScrollController.SCROLL_PANEL scrollPanel)
         {
             if (!string.IsNullOrEmpty(_nextToken) && scrollPanel.Equals(ScrollController.SCROLL_PANEL.BUY))
-                StartCoroutine(GetBuyData("", 10, _nextToken));
+                GetBuyData("", 10, _nextToken);
 
             if (!string.IsNullOrEmpty(_nextToken) && scrollPanel.Equals(ScrollController.SCROLL_PANEL.SELL))
-                StartCoroutine(GetSellData(10, _nextToken));
+                GetSellData(10, _nextToken);
 
             if (!string.IsNullOrEmpty(_nextToken) && scrollPanel.Equals(ScrollController.SCROLL_PANEL.MY_AUCTIONS))
-                StartCoroutine(GetAuctionsByGameData(10, _nextToken));
+                GetAuctionsByGameData(10, _nextToken);
 
             if (!string.IsNullOrEmpty(_nextToken) && scrollPanel.Equals(ScrollController.SCROLL_PANEL.SIMILAR_ITEMS))
-                StartCoroutine(GetBuyData("", 10, _nextToken));
+                GetBuyData("", 10, _nextToken);
 
             if (!string.IsNullOrEmpty(_nextToken) && scrollPanel.Equals(ScrollController.SCROLL_PANEL.SEARCH_ITEMS))
-                StartCoroutine(GetSearchItemsData("", 10, _nextToken));
+                GetSearchItemsData("", 10, _nextToken);
         }
         #endregion
 
@@ -138,7 +138,7 @@ namespace Bitszer
                 auctionItemParent.Clear();
 
                 titleText.text = "Buy";
-                StartCoroutine(GetBuyData("", 10, null));
+                GetBuyData("", 10, null);
             }
         }
 
@@ -149,7 +149,7 @@ namespace Bitszer
                 buyItemParent.Clear();
                 auctionItemParent.Clear();
 
-                StartCoroutine(GetSellData(10, null));
+                GetSellData(10, null);
 
                 titleText.text = "Sell";
             }
@@ -162,7 +162,7 @@ namespace Bitszer
                 buyItemParent.Clear();
                 sellItemParent.Clear();
 
-                StartCoroutine(GetAuctionsByGameData(3, null));
+                GetAuctionsByGameData(3, null);
 
                 titleText.text = "My Auctions";
             }
@@ -170,92 +170,61 @@ namespace Bitszer
         #endregion
 
         #region Get Data
-        public IEnumerator GetBuyData(string itemName, int limit, string nextToken)
+        public void GetBuyData(string itemName, int limit, string nextToken)
         {
             AuctionHouse dataProvider = AuctionHouse.Instance;
             APIManager.Instance.RaycastBlock(true);
 
             _buyItemsLength = 0;
 
-            GetAuction result = null;
-            var getAuction = dataProvider.GetAuctions(itemName, limit, nextToken);
-
-            getAuction.ContinueWith(_ =>
+            StartCoroutine(dataProvider.GetAuctions(itemName, limit, nextToken, result =>
             {
-                if (_.IsCompleted)
-                    result = _.Result;
-            });
-
-            yield return new WaitUntil(() => result != null);
-
-            if (string.IsNullOrEmpty(itemName))
-                StartCoroutine(PopulateBuyData(result));
-            else
-                StartCoroutine(PopulateSimilarItems(result));
+                if (string.IsNullOrEmpty(itemName))
+                    StartCoroutine(PopulateBuyData(result));
+                else
+                    StartCoroutine(PopulateSimilarItems(result));
+            }));
         }
 
-        public IEnumerator GetSellData(int limit, string nextToken)
+        public void GetSellData(int limit, string nextToken)
         {
             AuctionHouse dataProvider = AuctionHouse.Instance;
             APIManager.Instance.RaycastBlock(true);
 
             _sellItemsLength = 0;
 
-            GetInventory result = null;
-            var getInventory = dataProvider.GetInventory(limit, nextToken);
-
-            getInventory.ContinueWith(_ =>
+            StartCoroutine(dataProvider.GetInventory(limit, nextToken, result =>
             {
-                if (_.IsCompleted)
-                    result = _.Result;
-            });
-
-            yield return new WaitUntil(() => result != null);
-
-            StartCoroutine(PopulateSellData(result));
+                StartCoroutine(PopulateSellData(result));
+            }));
         }
 
-        public IEnumerator GetAuctionsByGameData(int limit, string nextToken)
+        public void GetAuctionsByGameData(int limit, string nextToken)
         {
             AuctionHouse dataProvider = AuctionHouse.Instance;
             APIManager.Instance.RaycastBlock(true);
 
             _myAuctionsLength = 0;
 
-            GetAuctionbyGame result = null;
-            var getAuctionsByGame = dataProvider.GetAuctionsByGame(limit, nextToken);
-
-            getAuctionsByGame.ContinueWith(_ =>
+            StartCoroutine(dataProvider.GetAuctionsByGame(limit, nextToken, result =>
             {
-                if (_.IsCompleted)
-                    result = _.Result;
-            });
-
-            yield return new WaitUntil(() => result != null);
-
-            StartCoroutine(PopulateAuctionsByGameData(result));
+                StartCoroutine(PopulateAuctionsByGameData(result));
+            }));
         }
 
-        public IEnumerator GetSearchItemsData(string itemName, int limit, string nextToken)
+        public void GetSearchItemsData(string itemName, int limit, string nextToken)
         {
             AuctionHouse dataProvider = AuctionHouse.Instance;
             APIManager.Instance.RaycastBlock(true);
 
             _searchItemsLength = 0;
 
-            GetAuction result = null;
-            var getAuction = dataProvider.GetAuctions(itemName, limit, nextToken);
-
-            getAuction.ContinueWith(_ =>
+            StartCoroutine(dataProvider.GetAuctions(itemName, limit, nextToken, result =>
             {
-                if (_.IsCompleted)
-                    result = _.Result;
-            });
 
-            yield return new WaitUntil(() => result != null);
-
-            if (!string.IsNullOrEmpty(itemName))
-                StartCoroutine(PopulateSearchItems(result));
+                if (!string.IsNullOrEmpty(itemName))
+                    StartCoroutine(PopulateSearchItems(result));
+            }));
         }
         #endregion
 
@@ -334,10 +303,17 @@ namespace Bitszer
 
                 buyoutPopupData.confirmButton.onClick.AddListener(() =>
                 {
+                    APIManager.Instance.RaycastBlock(true);
+
                     StartCoroutine(AuctionHouse.Instance.Buyout(item.id, result =>
                     {
-                        getAuction.data.getAuctions.auctions.Remove(item);
-                        Destroy(go);
+                        if (result.data.buyout)
+                        {
+                            getAuction.data.getAuctions.auctions.Remove(item);
+                            Destroy(go);
+
+                            APIManager.Instance.RaycastBlock(false);
+                        }
                     }));
                 });
             });
@@ -356,10 +332,17 @@ namespace Bitszer
 
                 bidPopupData.confirmButton.onClick.AddListener(() =>
                 {
+                    APIManager.Instance.RaycastBlock(true);
+
                     StartCoroutine(AuctionHouse.Instance.Bid(item.id, float.Parse(bidPopupData.totalBidInputField.text), result =>
                     {
-                        getAuction.data.getAuctions.auctions.Remove(item);
-                        Destroy(go);
+                        if (result.data.bid)
+                        {
+                            getAuction.data.getAuctions.auctions.Remove(item);
+                            Destroy(go);
+
+                            APIManager.Instance.RaycastBlock(false);
+                        }
                     }));
                 });
             });
@@ -377,7 +360,7 @@ namespace Bitszer
             }
         }
 
-        IEnumerator PopulateSellData(GetInventory getInventory)
+        private IEnumerator PopulateSellData(GetInventory getInventory)
         {
             var count = getInventory.data.getInventory.inventory.Count;
 
@@ -421,7 +404,7 @@ namespace Bitszer
                 sellItem.sellButton.onClick.AddListener(() =>
                 {
                     similarItemParent.Clear();
-                    StartCoroutine(GetBuyData(item.gameItem.itemName, 10, null));
+                    GetBuyData(item.gameItem.itemName, 10, null);
 
                     var sellItemPanelData = sellItemPanel.GetComponent<SellItemPanel>();
                     sellItemPanelData.usernameText.text = _profile.data.getMyProfile.name;
@@ -432,38 +415,45 @@ namespace Bitszer
                     sellItemPanelData.itemNameText.text = sellItem.itemNameText.text;
                     sellItemPanelData.totalItemsValueText.text = sellItem.availableText.text;
 
-                    AuctionInput newAuction = new AuctionInput();
-                    newAuction.gameId = AuctionHouse.Instance.configuration.gameId;
-                    newAuction.itemId = item.gameItem.itemId;
-
-                    int duration = sellItemPanelData.sellDurationDropdown.value switch
-                    {
-                        0 => 24,
-                        1 => 48,
-                        2 => 72,
-                        _ => 24
-                    };
-                    newAuction.auctionDuration = duration;
-
-                    float bidResult, buyoutResult;
-                    int qtyResult;
-
-                    if (float.TryParse(sellItemPanelData.totalBidValueText.text, out bidResult))
-                        newAuction.bid = bidResult;
-
-                    if (float.TryParse(sellItemPanelData.totalBuyoutValueText.text, out buyoutResult))
-                        newAuction.buyout = buyoutResult;
-
-                    if (int.TryParse(sellItemPanelData.itemsSoldValueInputField.text, out qtyResult))
-                        newAuction.quantity = qtyResult;
-
                     sellItemPanel.SetActive(true);
 
                     sellItemPanelData.confirmButton.onClick.AddListener(() =>
                     {
+                        APIManager.Instance.RaycastBlock(true);
+
+                        AuctionInput newAuction = new AuctionInput();
+                        newAuction.gameId = AuctionHouse.Instance.configuration.gameId;
+                        newAuction.itemId = item.gameItem.itemId;
+
+                        int duration = sellItemPanelData.sellDurationDropdown.value switch
+                        {
+                            0 => 24,
+                            1 => 48,
+                            2 => 72,
+                            _ => 24
+                        };
+                        newAuction.auctionDuration = duration;
+
+                        float bidResult, buyoutResult;
+                        int qtyResult;
+
+                        if (float.TryParse(sellItemPanelData.startingBidItemValueInputField.text, out bidResult))
+                            newAuction.bid = float.Parse(sellItemPanelData.startingBidItemValueInputField.text);
+
+                        if (float.TryParse(sellItemPanelData.buyoutItemValueInputField.text, out buyoutResult))
+                            newAuction.buyout = float.Parse(sellItemPanelData.buyoutItemValueInputField.text);
+
+                        if (int.TryParse(sellItemPanelData.itemsSoldValueInputField.text, out qtyResult))
+                            newAuction.quantity = int.Parse(sellItemPanelData.itemsSoldValueInputField.text);
+
                         StartCoroutine(AuctionHouse.Instance.CreateAuction(newAuction, result =>
                         {
-                            sellItemPanel.SetActive(false);
+                            if (result.data != null)
+                            {
+                                sellItemPanel.SetActive(false);
+                                sellItemParent.Clear();
+                                GetSellData(10, null);
+                            }
                         }));
                     });
 
@@ -525,10 +515,17 @@ namespace Bitszer
 
                     cancelPopupData.cancelAuctionButton.onClick.AddListener(() =>
                     {
+                        APIManager.Instance.RaycastBlock(true);
+
                         StartCoroutine(AuctionHouse.Instance.CancelAuction(item.id, result =>
                         {
-                            getAuctionbyGame.data.getAuctionsbyGame.auctions.Remove(item);
-                            Destroy(go);
+                            if (result.data.cancelAuction)
+                            {
+                                getAuctionbyGame.data.getAuctionsbyGame.auctions.Remove(item);
+                                Destroy(go);
+
+                                APIManager.Instance.RaycastBlock(false);
+                            }
                         }));
                     });
                 });
@@ -605,10 +602,17 @@ namespace Bitszer
 
                 buyoutPopupData.confirmButton.onClick.AddListener(() =>
                 {
+                    APIManager.Instance.RaycastBlock(true);
+
                     StartCoroutine(AuctionHouse.Instance.Buyout(item.id, result =>
                     {
-                        getAuction.data.getAuctions.auctions.Remove(item);
-                        Destroy(go);
+                        if (result.data.buyout)
+                        {
+                            getAuction.data.getAuctions.auctions.Remove(item);
+                            Destroy(go);
+
+                            APIManager.Instance.RaycastBlock(false);
+                        }
                     }));
                 });
             });
@@ -626,10 +630,17 @@ namespace Bitszer
 
                 bidPopupData.confirmButton.onClick.AddListener(() =>
                 {
+                    APIManager.Instance.RaycastBlock(true);
+
                     StartCoroutine(AuctionHouse.Instance.Bid(item.id, float.Parse(bidPopupData.totalBidInputField.text), result =>
                     {
-                        getAuction.data.getAuctions.auctions.Remove(item);
-                        Destroy(go);
+                        if (result.data.bid)
+                        {
+                            getAuction.data.getAuctions.auctions.Remove(item);
+                            Destroy(go);
+
+                            APIManager.Instance.RaycastBlock(false);
+                        }
                     }));
                 });
             });
@@ -705,10 +716,17 @@ namespace Bitszer
 
                 buyoutPopupData.confirmButton.onClick.AddListener(() =>
                 {
+                    APIManager.Instance.RaycastBlock(true);
+
                     StartCoroutine(AuctionHouse.Instance.Buyout(item.id, result =>
                     {
-                        getAuction.data.getAuctions.auctions.Remove(item);
-                        Destroy(go);
+                        if (result.data.buyout)
+                        {
+                            getAuction.data.getAuctions.auctions.Remove(item);
+                            Destroy(go);
+
+                            APIManager.Instance.RaycastBlock(false);
+                        }
                     }));
                 });
             });
@@ -726,10 +744,17 @@ namespace Bitszer
 
                 bidPopupData.confirmButton.onClick.AddListener(() =>
                 {
+                    APIManager.Instance.RaycastBlock(true);
+
                     StartCoroutine(AuctionHouse.Instance.Bid(item.id, float.Parse(bidPopupData.totalBidInputField.text), result =>
                     {
-                        getAuction.data.getAuctions.auctions.Remove(item);
-                        Destroy(go);
+                        if (result.data.bid)
+                        {
+                            getAuction.data.getAuctions.auctions.Remove(item);
+                            Destroy(go);
+
+                            APIManager.Instance.RaycastBlock(false);
+                        }
                     }));
                 });
             });
@@ -749,15 +774,18 @@ namespace Bitszer
         }
         #endregion
 
+        #region Public Methods
+        // Assigned to "SearchButton" in the inspector
         public void SearchButton()
         {
             if (!string.IsNullOrEmpty(searchInputField.text))
             {
                 searchBuyItemParent.Clear();
-                StartCoroutine(GetSearchItemsData(searchInputField.text, 10, ""));
+                GetSearchItemsData(searchInputField.text, 10, "");
             }
         }
 
+        // Assigned to "LoginButton" in the inspector under "SignupPanel"
         public void OpenLoginPanel()
         {
             loginPanel.SetActive(true);
@@ -765,6 +793,7 @@ namespace Bitszer
             tabPanel.SetActive(false);
         }
 
+        // Assigned to "RegisterButton" in the inspector under "LoginPanel"
         public void OpenSignupPanel()
         {
             signupPanel.SetActive(true);
@@ -779,9 +808,11 @@ namespace Bitszer
             tabPanel.SetActive(true);
         }
 
+        // Assigned to "ReturnToGameButton" in the inspector
         public void CloseAuctionHouse()
         {
-            loginPanel.transform.parent.gameObject.SetActive(false);
+            AuctionHouse.Instance.Close();
         }
+        #endregion
     }
 }

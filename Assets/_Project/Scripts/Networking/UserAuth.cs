@@ -82,9 +82,12 @@ namespace Bitszer
                     PlayerPrefs.SetString("email", email);
                     PlayerPrefs.SetString("password", password);
 
-                    AuctionHouse.Instance.GetMyProfile();
+                    StartCoroutine(AuctionHouse.Instance.GetMyProfile(result => { }));
+
                     APIManager.Instance.RaycastBlock(false);
                     uiManager.OpenTabPanel();
+
+                    Events.OnAuctionHouseInitialized.Invoke();
                 });
             }
             catch (Exception e)
